@@ -703,6 +703,12 @@ function runWarmTimer(ex){
           if(px)px.textContent=`${cnt} 秒後自動繼續`;
           if(cnt<=0){clearInterval(wtmr);wtmr=null;wgo(wcur+1);startWarm();}
         },1000);
+      } else {
+        // 最後一個動作完成 → 直接跳完成畫面
+        if(phi)phi.style.display='flex';
+        if(phd)phd.style.background='var(--teal)';
+        if(pht)pht.textContent='暖身完成！';
+        setTimeout(()=>{ if(mode==='warm') wFinish(); }, 1500);
       }
     }
   },1000);
