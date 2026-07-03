@@ -21,6 +21,7 @@
   --max:480px;
   --rose:#d94f6e;--rosel:#fdedf2;--rosed:#9c2440;
   --glute:#3d7a4f;--glutel:#e8f5ec;--gluted:#2a5637;
+  --lift:#B0522D;--liftl:#F7E7DE;--liftd:#7A3418;
 }
 
 /* Base */
@@ -361,6 +362,7 @@ body{
 .modal-tag.orange{background:#FFF0E6;color:#9C3D02}
 .modal-tag.rose{background:#fde8f0;color:#c0185a}
 .modal-tag.blue{background:#e3f2fd;color:#1565c0}
+.modal-tag.lift{background:#F7E7DE;color:#7A3418}
 .modal-close{display:block;width:100%;background:#f5f5f5;border:none;
   border-radius:12px;padding:13px;font-size:14px;font-weight:600;
   color:#555;cursor:pointer;margin-top:16px;font-family:inherit}
@@ -474,21 +476,6 @@ const WARM = [
    ],
    tip:'動作慢，不要快。讓腳重新找回滾動感，這對改善步態很重要。'},
 
-  {id:'warm5', title:'腳掌抬起', badge:'1分10秒', dur:69,
-   spk:{s:'開始腳掌抬起，雙腳前腳掌內彎交疊，準備用腳背力量撐起',m:'停留兩三秒，感受腳背出力，再慢慢放下',e:'腳掌抬起完成，暖身動作全部結束'},
-   steps:[
-     {title:'目的', icon:'ti-info-circle',
-      lines:['加強脛前肌（腳背）力量與踝關節穩定','雙腳交疊出力，同時訓練兩側協調','適合垂足困擾者加強上抬控制力'],
-      spk:null},
-     {title:'動作1：腳掌內彎交疊', icon:'ti-arrow-right',
-      lines:['坐姿或站姿，雙腳前腳掌向內旋轉','一腳前掌交疊在另一腳前掌上方','腳跟保持踩地，維持穩定'],
-      spk:'雙腳前腳掌向內旋轉，交疊在一起，腳跟踩穩地板'},
-     {title:'動作2：抬起—停留—放下', icon:'ti-arrow-right',
-      lines:['腳跟不離地，利用腳背力量將前腳掌撐起','上方腳掌輕壓下方腳掌增加阻力','停留 2～3 秒後慢慢放下，重複 10～15 次','完成後交換上下位置，換邊再做一次'],
-      spk:'利用腳背力量把前腳掌撐起，停留兩秒，慢慢放下，重複十到十五次'},
-   ],
-   tip:'感受出力的部位是腳背（脛前肌），不是靠腳趾抓地；上方腳掌施加的重量可依力量自行調整。'},
-
 ];
 
 
@@ -501,6 +488,25 @@ let wcur=0, wS={}, wtmr=null, wSS=null;
 let wStep=0;
 let customW={};
 let customLD={},customBD={};
+
+// ══ 腳掌抬起（獨立單一動作模組）══
+let flS={}, flStep=0, fltmr=null, flSS=null, customFL={};
+const FOOTLIFT = [
+  {id:'lift1', title:'腳掌抬起', badge:'1分10秒', dur:69,
+   spk:{s:'開始腳掌抬起，雙腳前腳掌內彎交疊，準備用腳背力量撐起',m:'停留兩三秒，感受腳背出力，再慢慢放下',e:'腳掌抬起完成，做得很好'},
+   steps:[
+     {title:'目的', icon:'ti-info-circle',
+      lines:['加強脛前肌（腳背）力量與踝關節穩定','雙腳交疊出力，同時訓練兩側協調','適合垂足困擾者加強上抬控制力'],
+      spk:null},
+     {title:'動作1：腳掌內彎交疊', icon:'ti-arrow-right',
+      lines:['坐姿或站姿，雙腳前腳掌向內旋轉','一腳前掌交疊在另一腳前掌上方','腳跟保持踩地，維持穩定'],
+      spk:'雙腳前腳掌向內旋轉，交疊在一起，腳跟踩穩地板'},
+     {title:'動作2：抬起—停留—放下', icon:'ti-arrow-right',
+      lines:['腳跟不離地，利用腳背力量將前腳掌撐起','上方腳掌輕壓下方腳掌增加阻力','停留 2～3 秒後慢慢放下，重複 10～15 次','完成後交換上下位置，換邊再做一次'],
+      spk:'利用腳背力量把前腳掌撐起，停留兩秒，慢慢放下，重複十到十五次'},
+   ],
+   tip:'感受出力的部位是腳背（脛前肌），不是靠腳趾抓地；上方腳掌施加的重量可依力量自行調整。'},
+];
 
 
 // ── 腰椎時間調整 ──
@@ -616,6 +622,7 @@ function render(){
   if(mode==='chest'){app.innerHTML=chestHTML();return;}
   if(mode==='band'){app.innerHTML=bandHTML();return;}
   if(mode==='glute'){app.innerHTML=gluteHTML();return;}
+  if(mode==='footlift'){app.innerHTML=footliftHTML();return;}
 }
 
 // ── 首頁 ──
@@ -633,9 +640,9 @@ function homeHTML(){
     <div class="mode-card warm" onclick="setMode('warm')">
       <div class="mode-icon blue"><i class="ti ti-walk"></i></div>
       <div class="mode-text">
-        <span class="mode-badge b">走路前 ～6 分鐘</span>
+        <span class="mode-badge b">走路前 ～4 分鐘</span>
         <div class="mode-title">足部暖身</div>
-        <div class="mode-sub">一萬步前的準備<br>足底放鬆・小腿伸展・腳踝喚醒・臀部啟動・腳掌抬起</div>
+        <div class="mode-sub">一萬步前的準備<br>足底放鬆・小腿伸展・腳踝喚醒・臀部啟動</div>
       </div>
     </div>
     <div class="mode-card" onclick="setMode('rehab')">
@@ -687,6 +694,14 @@ function homeHTML(){
       <div class="mode-sub">把穩定責任從足底還給臀部<br>牆邊承重・站姿臀後推・走路臀感覺</div>
     </div>
   </div>
+  <div class="mode-card" onclick="setMode('footlift')" style="border-color:var(--lift)">
+    <div class="mode-icon" style="background:var(--liftl);color:var(--liftd)"><i class="ti ti-arrow-big-up"></i></div>
+    <div class="mode-text">
+      <span class="mode-badge" style="background:var(--liftl);color:var(--liftd)">單一動作 ～1 分鐘</span>
+      <div class="mode-title">腳掌抬起</div>
+      <div class="mode-sub">雙腳交疊，加強腳背力量<br>腳掌內彎交疊・抬起—停留—放下</div>
+    </div>
+  </div>
     ${sitCardHTML()}
 </div>`;
 }
@@ -700,6 +715,7 @@ function setMode(m){
   if(m==='chest'){chcur=0;chSets={};totChS=0;chSS=null;}
   if(m==='band'){if(bandCueTmr){clearInterval(bandCueTmr);bandCueTmr=null;}if(bandTmr){clearInterval(bandTmr);bandTmr=null;}if(typeof bandAutoTmr!=='undefined'&&bandAutoTmr){clearInterval(bandAutoTmr);bandAutoTmr=null;}bandAutoSec=0;bandCur=0;bandSet=1;bandPhase='idle';bandDone={};bandCustom={};}
   if(m==='glute'){if(gluteTmr){clearInterval(gluteTmr);gluteTmr=null;}gluteCur=0;gluteS={};}
+  if(m==='footlift'){if(fltmr){clearInterval(fltmr);fltmr=null;}flS={};flStep=0;}
   render();
 }
 
@@ -755,7 +771,7 @@ function warmHTML(){
 <div class="hdr">
   <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
   <div class="hic blue"><i class="ti ti-walk"></i></div>
-  <div class="htx"><h1>足部暖身運動</h1><p>走路前約 6 分鐘 · 5 個動作</p></div>
+  <div class="htx"><h1>足部暖身運動</h1><p>走路前約 4 分鐘 · 4 個動作</p></div>
 </div>
 ${warmStepRow()}
 <div class="vrow">
@@ -859,6 +875,7 @@ function backHome(){
   if(wtmr){clearInterval(wtmr);wtmr=null;}
   if(tmr){clearInterval(tmr);tmr=null;}
   if(ltmr){clearInterval(ltmr);ltmr=null;}
+  if(fltmr){clearInterval(fltmr);fltmr=null;}
   window.speechSynthesis&&window.speechSynthesis.cancel();
   mode='home';render();
 }
@@ -984,6 +1001,196 @@ function wFinish(){
   </div>
 </div>`;
 }
+
+// ══════════════════════════════
+//  腳掌抬起模組（獨立單一動作）
+// ══════════════════════════════
+function getFootliftDur(id){
+  if(customFL[id]&&customFL[id].dur!==undefined)return customFL[id].dur;
+  try{const saved=localStorage.getItem('flDur_'+id);if(saved!==null)return parseInt(saved);}catch(e){}
+  return FOOTLIFT.find(e=>e.id===id).dur;
+}
+function isFootliftModified(id){const d=FOOTLIFT.find(e=>e.id===id);return getFootliftDur(id)!==d.dur;}
+function footliftDurChipHTML(id,dur,mod){
+  return`<div class="chip${mod?' mod':''}" id="chip-fldur" style="flex:0 0 150px">
+    <div class="chip-label" style="${mod?'color:var(--liftd)':''}">本動作時間（秒）${mod?' ✎':''}</div>
+    <div class="stepper">
+      <button class="stp-btn" style="border-color:var(--lift);color:var(--lift)" onclick="event.stopPropagation();updateFootliftChip('${id}',-10,20,300)">−</button>
+      <span class="stp-val" style="color:var(--liftd)">${dur}</span>
+      <button class="stp-btn" style="border-color:var(--lift);color:var(--lift)" onclick="event.stopPropagation();updateFootliftChip('${id}',10,20,300)">+</button>
+    </div>
+  </div>`;
+}
+function updateFootliftChip(id,delta,min,max){
+  if(!customFL[id])customFL[id]={};
+  const cur=getFootliftDur(id);
+  const newVal=Math.max(min,Math.min(max,cur+delta));
+  customFL[id].dur=newVal;
+  try{localStorage.setItem('flDur_'+id,newVal);}catch(e){}
+  if(fltmr){clearInterval(fltmr);fltmr=null;}
+  flS[id]=0;flStep=0;
+  render();
+}
+
+function footliftHTML(){
+  const ex=FOOTLIFT[0];
+  const done=(flS[ex.id]||0)>=1;
+  const dur=getFootliftDur(ex.id), flmod=isFootliftModified(ex.id);
+  const durStr=durLabel(dur);
+  const step=ex.steps[flStep]||ex.steps[0];
+  const actionSteps=ex.steps.filter(s=>s.spk);
+  const totalAct=actionSteps.length;
+
+  const tabsHTML=ex.steps.map((s,i)=>`
+    <div id="fltab_${i}" style="flex:1;padding:6px 3px;font-size:11px;font-weight:${flStep===i?'700':'400'};border:1px solid ${flStep===i?'var(--lift)':'var(--br)'};background:${flStep===i?'var(--liftl)':'var(--bg)'};color:${flStep===i?'var(--liftd)':'var(--tx2)'};border-radius:8px;text-align:center;transition:all .3s;cursor:default;user-select:none">${i===0?'說明':s.title.replace('動作','').replace(/^[0-9]/,'').replace('：','<br>')}</div>`).join('');
+
+  const descHTML=`<div class="warm-block" id="fl-desc">
+    <div class="warm-block-title" style="color:var(--liftd)"><i class="ti ${step.icon}"></i><span id="fl-desc-title">${step.title}</span></div>
+    <div class="warm-steps" id="fl-desc-lines">${step.lines.map(l=>`<div class="warm-step">${l}</div>`).join('')}</div>
+  </div>`;
+
+  const progressHTML=totalAct>0?`<div style="display:flex;gap:4px;align-items:center">
+    ${actionSteps.map((s,i)=>`<div id="flprog_${i}" style="flex:1;height:3px;border-radius:2px;background:${i===0&&flStep>0?'var(--lift)':'var(--br)'}"></div>`).join('')}
+  </div>`:'';
+
+  return `
+<div class="hdr">
+  <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
+  <div class="hic" style="background:var(--liftl);color:var(--liftd)"><i class="ti ti-arrow-big-up"></i></div>
+  <div class="htx"><h1>腳掌抬起</h1><p>單一動作・約 ${durStr}</p></div>
+</div>
+<div class="vrow">
+  <i class="ti ti-volume" style="font-size:15px;color:var(--lift)"></i>
+  <span class="vlbl">語音引導</span>
+  <span class="vst" id="vst" style="color:var(--liftd)">${voiceOn?'開啟':'關閉'}</span>
+  <button class="tgl ${voiceOn?'':'off'}" id="vtgl" onclick="togV()" style="background:${voiceOn?'var(--lift)':'#ccc'}"></button>
+</div>
+<div class="card">
+  <div class="ctop">
+    <div class="cnum" style="background:var(--liftl);color:var(--liftd)"><i class="ti ti-arrow-big-up" style="font-size:14px"></i></div>
+    <span class="ct">${ex.title}</span>
+    <span class="cbdg" style="background:var(--liftl);color:var(--liftd);border-color:rgba(176,82,45,.25)">${durStr}${flmod?' ✎':''}</span>
+  </div>
+  <div class="cbody">
+    <div style="display:flex;gap:5px">${tabsHTML}</div>
+    ${progressHTML}
+    ${descHTML}
+    <div class="warm-tip"><i class="ti ti-bulb" style="font-size:14px;color:var(--amd)"></i><span>${ex.tip}</span></div>
+    <div class="tip"><i class="ti ti-adjustments-horizontal" style="font-size:14px;color:var(--lift)"></i><span>點 <strong>＋ / −</strong> 可調整本動作時間${done?'（重置後生效）':''}</span></div>
+    <div class="chips" style="display:flex;justify-content:center">
+      ${footliftDurChipHTML(ex.id,dur,flmod)}
+    </div>
+    <div class="phi wphi" id="phi"><div class="phd" id="phd" style="background:var(--lift)"></div><span id="pht">準備中</span></div>
+    <div class="twrap">
+      <div class="rw">
+        <svg width="84" height="84" viewBox="0 0 100 100">
+          <circle class="trk" cx="50" cy="50" r="42"/>
+          <circle class="fil" id="ring" cx="50" cy="50" r="42" stroke-dasharray="${C42}" stroke-dashoffset="0" style="stroke:var(--lift)"/>
+        </svg>
+        <div class="rlb"><span class="rn" id="tc">${done?'✓':'--'}</span><span class="ru">秒</span></div>
+      </div>
+    </div>
+    <div class="dban" id="ban" style="background:var(--liftl);color:var(--liftd);border:1px solid var(--lift);${done?'display:block':'display:none'}">✓ 完成！</div>
+    <div class="btns">
+      <button class="bgo" id="bgo" style="background:var(--lift)" onclick="startFootlift()" ${done?'disabled':''}>${done?'<i class="ti ti-circle-check"></i> 已完成':'<i class="ti ti-player-play"></i> 開始（'+durStr+'）'}</button>
+      <button class="brst" onclick="flRst()">重置</button>
+    </div>
+    ${done?`<div class="nav"><button class="nnx" style="background:var(--liftd);flex:1" onclick="backHome()">完成，回首頁 <i class="ti ti-flag"></i></button></div>`:''}
+  </div>
+</div>`;
+}
+
+function updateFootliftUI(stepIdx){
+  const ex=FOOTLIFT[0];
+  const step=ex.steps[stepIdx];
+  if(!step)return;
+  flStep=stepIdx;
+
+  ex.steps.forEach((_,i)=>{
+    const tab=document.getElementById('fltab_'+i);
+    if(!tab)return;
+    const active=i===stepIdx;
+    tab.style.fontWeight=active?'700':'400';
+    tab.style.borderColor=active?'var(--lift)':'var(--br)';
+    tab.style.background=active?'var(--liftl)':'var(--bg)';
+    tab.style.color=active?'var(--liftd)':'var(--tx2)';
+  });
+
+  const actionSteps=ex.steps.filter(s=>s.spk);
+  actionSteps.forEach((s,i)=>{
+    const bar=document.getElementById('flprog_'+i);
+    if(bar)bar.style.background=ex.steps.indexOf(s)<stepIdx?'var(--lift)':'var(--br)';
+  });
+
+  const titleEl=document.getElementById('fl-desc-title');
+  const linesEl=document.getElementById('fl-desc-lines');
+  const iconEl=document.querySelector('#fl-desc .warm-block-title i');
+  if(titleEl)titleEl.textContent=step.title;
+  if(iconEl){iconEl.className='ti '+step.icon;}
+  if(linesEl)linesEl.innerHTML=step.lines.map(l=>`<div class="warm-step">${l}</div>`).join('');
+
+  const pht=document.getElementById('pht');
+  if(pht)pht.textContent='計時中';
+}
+
+function startFootlift(){
+  const ex=FOOTLIFT[0];
+  if(fltmr)return;
+  const btn=document.getElementById('bgo');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> 進行中…';}
+  if(!flSS)flSS=Date.now();
+  updateFootliftUI(0);
+  spk(ex.spk.s);
+  setTimeout(()=>{ if(mode==='footlift') runFootliftTimer(ex); }, 1500);
+}
+
+function runFootliftTimer(ex){
+  const dur=getFootliftDur(ex.id);
+  const ring=document.getElementById('ring'),tc=document.getElementById('tc');
+  const phi=document.getElementById('phi'),phd=document.getElementById('phd'),pht=document.getElementById('pht');
+  if(!ring)return;
+  phi.style.display='flex';
+  if(phd)phd.style.background='var(--lift)';
+  if(pht)pht.textContent='計時中';
+
+  let rem=dur;
+  tc.textContent=rem;
+  ring.style.strokeDashoffset='0';
+  ring.style.stroke='var(--lift)';
+
+  const actionSteps=ex.steps.map((s,i)=>({...s,idx:i})).filter(s=>s.spk);
+  const slotSec=Math.floor(dur/Math.max(actionSteps.length,1));
+  const triggers=actionSteps.map((s,n)=>({rem:dur-slotSec*(n+1),step:s,n:n}));
+  let triggered=new Set();
+
+  fltmr=setInterval(()=>{
+    rem--;
+    const t=document.getElementById('tc'),r=document.getElementById('ring');
+    if(!t){clearInterval(fltmr);fltmr=null;return;}
+    t.textContent=rem;
+    r.style.strokeDashoffset=C42*(1-rem/dur);
+
+    triggers.forEach((trig,n)=>{
+      if(triggered.has(n))return;
+      if(rem<=trig.rem||(n===triggers.length-1&&rem<=slotSec)){
+        triggered.add(n);
+        updateFootliftUI(trig.step.idx);
+        spk(trig.step.spk);
+      }
+    });
+
+    if(rem<=0){
+      clearInterval(fltmr);fltmr=null;
+      flS[ex.id]=1;
+      spk(ex.spk.e);
+      if(phi)phi.style.display='none';
+      if(tc)tc.textContent='✓';
+      setTimeout(()=>{ if(mode==='footlift') render(); }, 400);
+    }
+  },1000);
+}
+
+function flRst(){if(fltmr){clearInterval(fltmr);fltmr=null;}flS[FOOTLIFT[0].id]=0;flStep=0;render();}
 
 // ══════════════════════════════
 //  復健模組
@@ -2835,13 +3042,14 @@ function closeInfoModal(e){
     <p>本工具由本人自行開發，用於輔助術後個人復健訓練計畫，結合語音引導與計時功能，讓每日訓練更有結構。</p>
 
     <h3>🗂 訓練模組</h3>
-    <span class="modal-tag blue">足部暖身</span>走路前 6 分鐘準備<br>
+    <span class="modal-tag blue">足部暖身</span>走路前 4 分鐘準備<br>
     <span class="modal-tag green">垂足復健</span>右腳患側每日訓練<br>
     <span class="modal-tag amber">站姿腰椎</span>術後減壓伸展<br>
     <span class="modal-tag purple">臥姿腰椎</span>床上三動作<br>
     <span class="modal-tag rose">擴胸運動</span>坐臥兩種姿勢<br>
     <span class="modal-tag orange">彈力帶訓練</span>全身阻力 7 組<br>
-    <span class="modal-tag green">臀部啟動</span>代償修正 3 動作
+    <span class="modal-tag green">臀部啟動</span>代償修正 3 動作<br>
+    <span class="modal-tag lift">腳掌抬起</span>單一動作，交疊訓練腳背力量
 
     <h3>🔊 語音引導</h3>
     <p>使用裝置內建語音（中文 zh-TW），需在手機瀏覽器授權朗讀功能。首次使用若無聲音，請在設定中確認語音合成已開啟。</p>
