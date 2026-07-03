@@ -474,6 +474,21 @@ const WARM = [
    ],
    tip:'動作慢，不要快。讓腳重新找回滾動感，這對改善步態很重要。'},
 
+  {id:'warm5', title:'腳掌抬起', badge:'1分10秒', dur:69,
+   spk:{s:'開始腳掌抬起，雙腳前腳掌內彎交疊，準備用腳背力量撐起',m:'停留兩三秒，感受腳背出力，再慢慢放下',e:'腳掌抬起完成，暖身動作全部結束'},
+   steps:[
+     {title:'目的', icon:'ti-info-circle',
+      lines:['加強脛前肌（腳背）力量與踝關節穩定','雙腳交疊出力，同時訓練兩側協調','適合垂足困擾者加強上抬控制力'],
+      spk:null},
+     {title:'動作1：腳掌內彎交疊', icon:'ti-arrow-right',
+      lines:['坐姿或站姿，雙腳前腳掌向內旋轉','一腳前掌交疊在另一腳前掌上方','腳跟保持踩地，維持穩定'],
+      spk:'雙腳前腳掌向內旋轉，交疊在一起，腳跟踩穩地板'},
+     {title:'動作2：抬起—停留—放下', icon:'ti-arrow-right',
+      lines:['腳跟不離地，利用腳背力量將前腳掌撐起','上方腳掌輕壓下方腳掌增加阻力','停留 2～3 秒後慢慢放下，重複 10～15 次','完成後交換上下位置，換邊再做一次'],
+      spk:'利用腳背力量把前腳掌撐起，停留兩秒，慢慢放下，重複十到十五次'},
+   ],
+   tip:'感受出力的部位是腳背（脛前肌），不是靠腳趾抓地；上方腳掌施加的重量可依力量自行調整。'},
+
 ];
 
 
@@ -618,9 +633,9 @@ function homeHTML(){
     <div class="mode-card warm" onclick="setMode('warm')">
       <div class="mode-icon blue"><i class="ti ti-walk"></i></div>
       <div class="mode-text">
-        <span class="mode-badge b">走路前 ～4 分鐘</span>
+        <span class="mode-badge b">走路前 ～6 分鐘</span>
         <div class="mode-title">足部暖身</div>
-        <div class="mode-sub">一萬步前的準備<br>足底放鬆・小腿伸展・腳踝喚醒・臀部啟動</div>
+        <div class="mode-sub">一萬步前的準備<br>足底放鬆・小腿伸展・腳踝喚醒・臀部啟動・腳掌抬起</div>
       </div>
     </div>
     <div class="mode-card" onclick="setMode('rehab')">
@@ -723,7 +738,7 @@ function warmHTML(){
 
   // 圖片區：永遠顯示（說明頁也有預覽圖）
   const imgSrc=step.img?WARM_IMGS[step.img]:(ex.steps.find(s=>s.img)?WARM_IMGS[ex.steps.find(s=>s.img).img]:'');
-  const imgHTML=`<div id="warm-img-wrap" class="illus-wrap"><img id="warm-img" src="${imgSrc}" alt="${step.title}" style="width:100%;height:auto;display:block;transition:opacity .4s"/></div>`;
+  const imgHTML=imgSrc?`<div id="warm-img-wrap" class="illus-wrap"><img id="warm-img" src="${imgSrc}" alt="${step.title}" style="width:100%;height:auto;display:block;transition:opacity .4s"/></div>`:'';
 
   // 說明文字區（由計時器更新 innerHTML）
   const descHTML=`<div class="warm-block" id="warm-desc">
@@ -740,7 +755,7 @@ function warmHTML(){
 <div class="hdr">
   <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
   <div class="hic blue"><i class="ti ti-walk"></i></div>
-  <div class="htx"><h1>足部暖身運動</h1><p>走路前約 4 分鐘 · 4 個動作</p></div>
+  <div class="htx"><h1>足部暖身運動</h1><p>走路前約 6 分鐘 · 5 個動作</p></div>
 </div>
 ${warmStepRow()}
 <div class="vrow">
@@ -2820,7 +2835,7 @@ function closeInfoModal(e){
     <p>本工具由本人自行開發，用於輔助術後個人復健訓練計畫，結合語音引導與計時功能，讓每日訓練更有結構。</p>
 
     <h3>🗂 訓練模組</h3>
-    <span class="modal-tag blue">足部暖身</span>走路前 4 分鐘準備<br>
+    <span class="modal-tag blue">足部暖身</span>走路前 6 分鐘準備<br>
     <span class="modal-tag green">垂足復健</span>右腳患側每日訓練<br>
     <span class="modal-tag amber">站姿腰椎</span>術後減壓伸展<br>
     <span class="modal-tag purple">臥姿腰椎</span>床上三動作<br>
