@@ -1176,26 +1176,40 @@ function runFootliftTimer(ex){
   ring.style.strokeDashoffset='0';
   ring.style.stroke='var(--lift)';
 
+  // 每次循環 15 秒：抬起(1)+1-2-3-4-5(5) + 停留(1)+1-2-3-4-5(5) + 放下(1)+1-2-3-4-5(5) - 最後2秒省略
+  // 每秒口令序列（循環）
+  const CUE = ['抬起','一','二','三','四','五','停留','一','二','三','四','五','放下','一','二','三','四','五'];
+  const CUE_LEN = CUE.length; // 18
+  let elapsed = 0;
+  let lastCueIdx = -1;
+
+  // Switch to action step 2 UI immediately (skip intro)
   const actionSteps=ex.steps.map((s,i)=>({...s,idx:i})).filter(s=>s.spk);
-  const slotSec=Math.floor(dur/Math.max(actionSteps.length,1));
-  const triggers=actionSteps.map((s,n)=>({rem:dur-slotSec*(n+1),step:s,n:n}));
-  let triggered=new Set();
+  if(actionSteps.length>0){ updateFootliftUI(actionSteps[0].idx); }
 
   fltmr=setInterval(()=>{
     rem--;
+    elapsed++;
     const t=document.getElementById('tc'),r=document.getElementById('ring');
     if(!t){clearInterval(fltmr);fltmr=null;return;}
     t.textContent=rem;
     r.style.strokeDashoffset=C42*(1-rem/dur);
 
-    triggers.forEach((trig,n)=>{
-      if(triggered.has(n))return;
-      if(rem<=trig.rem||(n===triggers.length-1&&rem<=slotSec)){
-        triggered.add(n);
-        updateFootliftUI(trig.step.idx);
-        spk(trig.step.spk);
-      }
-    });
+    // Per-second voice cue
+    const cueIdx = (elapsed - 1) % CUE_LEN;
+    if(cueIdx !== lastCueIdx){
+      lastCueIdx = cueIdx;
+      spk(CUE[cueIdx]);
+    }
+
+    // Update phase label
+    const phase = CUE[cueIdx];
+    const pht2=document.getElementById('pht');
+    if(pht2){
+      if(phase==='抬起'||['一','二','三','四','五'].includes(phase)&&cueIdx<6) pht2.textContent='抬起中';
+      else if(phase==='停留') pht2.textContent='停留中';
+      else if(phase==='放下') pht2.textContent='放下中';
+    }
 
     if(rem<=0){
       clearInterval(fltmr);fltmr=null;
