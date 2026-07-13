@@ -483,6 +483,71 @@ const WARM = [
 // ── 狀態 ──
 
 let mode='home';
+
+// ── 套餐組合訓練 ──
+let comboQueue=[];      // 使用者選擇的模組順序，例如 ['warm','rehab']
+let comboActive=false;  // 是否正在執行套餐
+let comboPos=-1;        // 目前執行到 comboQueue 的第幾項
+let comboLast=null;     // 上一次執行過的套餐組合（自動記錄，供下次快速啟動）
+try{ comboLast=JSON.parse(localStorage.getItem('comboLast')||'null'); }catch(e){ comboLast=null; }
+const COMBO_META={
+  warm:{label:'足部暖身',num:1},
+  rehab:{label:'垂足復健',num:2},
+  lumbar:{label:'站姿腰椎復健',num:3},
+  bedlumbar:{label:'臥姿腰椎復健',num:4},
+  chest:{label:'擴胸運動',num:5},
+  band:{label:'彈力帶訓練',num:6},
+  glute:{label:'臀部啟動訓練',num:7},
+  footlift:{label:'腳掌抬起',num:8}
+};
+function comboToggle(key){
+  const i=comboQueue.indexOf(key);
+  if(i>=0) comboQueue.splice(i,1);
+  else comboQueue.push(key);
+  render();
+}
+function comboClear(){comboQueue=[];render();}
+function comboStart(){
+  if(comboQueue.length===0)return;
+  comboLast=[...comboQueue];
+  try{ localStorage.setItem('comboLast', JSON.stringify(comboLast)); }catch(e){}
+  comboActive=true;
+  comboPos=0;
+  setMode(comboQueue[0]);
+}
+function comboUseLast(){
+  if(!comboLast||comboLast.length===0)return;
+  comboQueue=[...comboLast];
+  comboStart();
+}
+function comboAdvance(){
+  comboPos++;
+  if(comboPos<comboQueue.length){
+    const next=comboQueue[comboPos];
+    spk('接下來：'+COMBO_META[next].label);
+    setTimeout(()=>{ setMode(next); },1200);
+  }else{
+    comboActive=false;comboQueue=[];comboPos=-1;
+    comboFinishScreen();
+  }
+}
+function comboFinishScreen(){
+  spk('恭喜，套餐訓練全部完成！');
+  document.getElementById('app').innerHTML=`<div class="hdr">
+  <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
+  <div class="hic green"><i class="ti ti-trophy"></i></div>
+  <div class="htx"><h1>套餐組合訓練</h1><p>全部完成</p></div>
+</div>
+<div class="card">
+  <div class="done-scr">
+    <div class="done-ic green"><i class="ti ti-trophy" style="font-size:30px;color:var(--teal)"></i></div>
+    <h2>套餐訓練全部完成！🎉</h2>
+    <p>今天選擇的訓練項目都做完了，<br>辛苦了，持續保持！</p>
+    <button class="bres green" onclick="backHome()"><i class="ti ti-home"></i> 回首頁</button>
+  </div>
+</div>`;
+}
+
 let custom={}, rcur=0, voiceOn=true, tmr=null, cS={}, totS=0, ss=null;
 let wcur=0, wS={}, wtmr=null, wSS=null;
 let wStep=0;
@@ -629,6 +694,35 @@ function render(){
   if(mode==='footlift'){app.innerHTML=footliftHTML();return;}
 }
 
+// ── 套餐組合 UI ──
+function comboBoxHTML(){
+  const chips=Object.entries(COMBO_META).map(([key,m])=>{
+    const pos=comboQueue.indexOf(key);
+    const sel=pos>=0;
+    return `<div onclick="comboToggle('${key}')" style="cursor:pointer;padding:8px 12px;border-radius:20px;border:1.5px solid ${sel?'var(--teal)':'var(--br)'};background:${sel?'var(--teal)':'var(--bg)'};color:${sel?'#fff':'var(--tx)'};font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .2s">${sel?`<span style="background:#fff;color:var(--teal);border-radius:50%;width:18px;height:18px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">${pos+1}</span>`:`<span style="opacity:.45;font-size:11px">${m.num}</span>`}${m.label}</div>`;
+  }).join('');
+  const summary=comboQueue.length>0?`<div style="font-size:12.5px;color:var(--tx2);margin:2px 0 10px">已選順序：${comboQueue.map(k=>COMBO_META[k].label).join(' → ')}</div>`:'';
+  const lastHTML=(comboLast&&comboLast.length>0)?`<div onclick="comboUseLast()" style="cursor:pointer;display:flex;align-items:center;gap:10px;background:var(--teal);color:#fff;border-radius:10px;padding:10px 12px;margin-bottom:12px">
+    <i class="ti ti-history" style="font-size:18px;flex-shrink:0"></i>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:11.5px;opacity:.85">上次套餐・一鍵開始</div>
+      <div style="font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${comboLast.map(k=>COMBO_META[k]?.label||k).join(' → ')}</div>
+    </div>
+    <i class="ti ti-player-play" style="font-size:16px;flex-shrink:0"></i>
+  </div>`:'';
+  return `<div style="background:var(--bg);border:2px dashed #9aa;border-radius:var(--ra);padding:16px;margin-bottom:16px">
+  <div style="font-weight:800;font-size:15px;margin-bottom:4px">🧩 套餐組合訓練</div>
+  <div style="font-size:12px;color:var(--tx2);margin-bottom:10px">依序點選要做的項目，完成第一項後會自動接續下一項</div>
+  ${lastHTML}
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">${chips}</div>
+  ${summary}
+  <div style="display:flex;gap:8px">
+    <button onclick="comboStart()" ${comboQueue.length===0?'disabled':''} style="flex:1;background:var(--teal);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;opacity:${comboQueue.length===0?'.5':'1'}"><i class="ti ti-player-play"></i> 開始套餐（${comboQueue.length}項）</button>
+    <button onclick="comboClear()" style="background:transparent;border:1.5px solid var(--br);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--tx2);cursor:pointer;font-family:inherit">清空</button>
+  </div>
+</div>`;
+}
+
 // ── 首頁 ──
 function homeHTML(){
   return `<div class="home">
@@ -640,6 +734,7 @@ function homeHTML(){
       說明 &amp; 免責聲明
     </button>
   </div>
+  ${comboBoxHTML()}
   <div class="mode-cards">
     <div class="mode-card warm" onclick="setMode('warm')">
       <div class="mode-icon blue"><i class="ti ti-walk"></i></div>
@@ -908,6 +1003,7 @@ function backHome(){
   if(ltmr){clearInterval(ltmr);ltmr=null;}
   if(fltmr){clearInterval(fltmr);fltmr=null;}
   window.speechSynthesis&&window.speechSynthesis.cancel();
+  comboActive=false;comboPos=-1;
   mode='home';render();
 }
 
@@ -1015,6 +1111,7 @@ function wRst(){if(wtmr){clearInterval(wtmr);wtmr=null;}wS[WARM[wcur].id]=0;wSte
 
 function wFinish(){
   if(wtmr){clearInterval(wtmr);wtmr=null;}
+  if(comboActive){comboAdvance();return;}
   spk('所有暖身動作完成！準備好開始走路了！');
   document.getElementById('app').innerHTML=`<div class="hdr">
   <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
@@ -1244,7 +1341,11 @@ function runFootliftTimer(ex){
       spk(ex.spk.e);
       if(phi)phi.style.display='none';
       if(tc)tc.textContent='✓';
-      setTimeout(()=>{ if(mode==='footlift') render(); }, 400);
+      if(comboActive){
+        setTimeout(()=>{ if(mode==='footlift') comboAdvance(); }, 800);
+      }else{
+        setTimeout(()=>{ if(mode==='footlift') render(); }, 400);
+      }
     }
   },1000);
 }
@@ -1443,6 +1544,7 @@ function autoNext(){
 function rst(){if(tmr){clearInterval(tmr);tmr=null;}cS[DEFAULTS[rcur].id]=0;render();}
 function finishAll(){
   if(tmr){clearInterval(tmr);tmr=null;}
+  if(comboActive){comboAdvance();return;}
   const mins=ss?Math.round((Date.now()-ss)/60000):0;
   spk('今日訓練全部完成，做得非常好！');
   document.getElementById('app').innerHTML=`<div class="hdr">
@@ -1895,6 +1997,7 @@ function runLumbarPhase(phaseIdx){
 
 function finishLumbar(){
   if(ltmr){clearInterval(ltmr);ltmr=null;}
+  if(comboActive){comboAdvance();return;}
   const mins=lSS?Math.round((Date.now()-lSS)/60000):5;
   spk('今日腰椎復健全部完成，做得非常好！');
   document.getElementById('app').innerHTML=`<div class="hdr">
@@ -2137,6 +2240,7 @@ function runBedPhase(phaseIdx){
 
 function finishBedLumbar(){
   if(btmr){clearInterval(btmr);btmr=null;}
+  if(comboActive){comboAdvance();return;}
   const mins=bSS?Math.round((Date.now()-bSS)/60000):7;
   spk('床上腰椎復健全部完成，做得非常好！');
   document.getElementById('app').innerHTML=`<div class="hdr">
@@ -2455,6 +2559,7 @@ function mkChestDone(sets){
 
 function finishChest(){
   if(chtmr){clearInterval(chtmr);chtmr=null;}
+  if(comboActive){comboAdvance();return;}
   const mins=chSS?Math.round((Date.now()-chSS)/60000):0;
   spk('擴胸運動全部完成，做得非常好！');
   document.getElementById('app').innerHTML=`<div class="hdr">
@@ -2804,7 +2909,9 @@ function bandGoTo(i){
   bandPhase='idle';render();
 }
 function bandFinishAll(){
-  BAND_EX.forEach(e=>{bandDone[e.id]=bandGetVal(e.id,'sets');});render();
+  BAND_EX.forEach(e=>{bandDone[e.id]=bandGetVal(e.id,'sets');});
+  if(comboActive){comboAdvance();return;}
+  render();
 }
 
 // ── Band 動作間自動跳轉 ──────────────────────────
@@ -3036,6 +3143,7 @@ function runGlute(totalSec){
 
 function gFinish(){
   if(gluteTmr){clearInterval(gluteTmr);gluteTmr=null;}
+  if(comboActive){comboAdvance();return;}
   spk('臀部啟動訓練全部完成！每天練習，代償會慢慢改善。');
   const app=document.getElementById('app');
   const mins=Math.round(GLUTE_EX.reduce((a,e)=>a+e.dur,0)/60);
