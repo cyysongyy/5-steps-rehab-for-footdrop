@@ -1534,6 +1534,7 @@ function mkDone(sets){
   // 步驟列更新
   const sr=document.getElementById('steprow');if(sr)sr.outerHTML=rehabStepRow();
   if((comboActive||!isModified(DEFAULTS[rcur].id))&&rcur<DEFAULTS.length-1)autoNext();
+  else if(comboActive&&rcur===DEFAULTS.length-1)setTimeout(()=>{if(mode==='rehab'&&comboActive)finishAll();},1500);
 }
 function autoNext(){
   let rem=15;
@@ -1939,7 +1940,7 @@ function runLumbarPhase(phaseIdx){
         t.textContent=cnt;if(r)r.style.strokeDashoffset=C42*(1-cnt/laTotal);if(pt)pt.textContent=`${cnt} 秒後自動繼續`;
         if(cnt<=0){clearInterval(ltmr);ltmr=null;lgo(lcur+1);startLumbar();}
       },500);
-    }
+    }else if(comboActive){setTimeout(()=>{if(mode==='lumbar'&&comboActive)finishLumbar();},1500);}
     return;
   }
 
@@ -2200,7 +2201,7 @@ function runBedPhase(phaseIdx){
         t.textContent=cnt;if(r)r.style.strokeDashoffset=C42*(1-cnt/laTotal);if(pt)pt.textContent=`${cnt} 秒後自動繼續`;
         if(cnt<=0){clearInterval(btmr);btmr=null;bgo(bcur+1);startBedLumbar();}
       },500);
-    }
+    }else if(comboActive){setTimeout(()=>{if(mode==='bedlumbar'&&comboActive)finishBedLumbar();},1500);}
     return;
   }
 
@@ -2566,7 +2567,7 @@ function mkChestDone(sets){
       if(pt)pt.textContent=`${cnt}秒後自動下一個…`;
       if(cnt<=0){clearInterval(chtmr);chtmr=null;chgo(chcur+1);setTimeout(startChest,400);}
     },1000);
-  }
+  }else if(comboActive){setTimeout(()=>{if(mode==='chest'&&comboActive)finishChest();},1500);}
 }
 
 function finishChest(){
@@ -2857,7 +2858,7 @@ function bandSetDone(){
     bandPhase='done_ex';
     spk(ex.name+'完成，很棒！');
     render();
-    const ni=bandCur+1;if(ni<BAND_EX.length){bandAutoNext(ni);}
+    const ni=bandCur+1;if(ni<BAND_EX.length){bandAutoNext(ni);}else if(comboActive){setTimeout(()=>{if(mode==='band'&&comboActive)bandFinishAll();},1500);}
   } else {
     bandSet++;
     bandPhase='rest';
@@ -2890,7 +2891,7 @@ function bandManualDone(){
     bandPhase='done_ex';
     spk(BAND_EX[bandCur].name+'完成！');
     render();
-    const ni=bandCur+1;if(ni<BAND_EX.length){bandAutoNext(ni);}
+    const ni=bandCur+1;if(ni<BAND_EX.length){bandAutoNext(ni);}else if(comboActive){setTimeout(()=>{if(mode==='band'&&comboActive)bandFinishAll();},1500);}
   } else {
     bandSet++;bandPhase='rest';
     const brd2=bandGetVal(BAND_EX[bandCur].id,'rest');
@@ -3148,7 +3149,7 @@ function runGlute(totalSec){
       const sr=document.getElementById('steprow');if(sr)sr.outerHTML=gluteStepRow();
       // 自動跳下一個動作
       const isLast=gluteCur===GLUTE_EX.length-1;
-      if(!isLast){ gluteAutoNext(gluteCur+1); }
+      if(!isLast){ gluteAutoNext(gluteCur+1); }else if(comboActive){setTimeout(()=>{if(mode==='glute'&&comboActive)gFinish();},1500);}
     }
   },1000);
 }
