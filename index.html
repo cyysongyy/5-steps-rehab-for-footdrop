@@ -498,17 +498,32 @@ const COMBO_META={
   chest:{label:'擴胸運動',num:5},
   band:{label:'彈力帶訓練',num:6},
   glute:{label:'臀部啟動訓練',num:7},
-  footlift:{label:'腳掌抬起',num:8}
+  footlift:{label:'腳掌抬起',num:8},
+  gait:{label:'步態平衡訓練器',num:9}
 };
 // 各模組的「開始」函式名稱，套餐模式下會自動呼叫，不需使用者手動按開始
 const COMBO_STARTERS={
   warm:'startWarm', rehab:'startEx', lumbar:'startLumbar', bedlumbar:'startBedLumbar',
   chest:'startChest', band:'bandStartSet', glute:'startGlute', footlift:'startFootlift'
 };
+// 外部連結型套餐項目（不是內建模組，選到時開新分頁並自動接續下一項）
+const COMBO_EXTERNAL={
+  gait:'https://cyysongyy.github.io/gait/'
+};
 function comboAutoStart(key){
   const fnName=COMBO_STARTERS[key];
   if(!comboActive||!fnName||typeof window[fnName]!=='function')return;
   setTimeout(()=>{ if(mode===key) window[fnName](); }, 500);
+}
+function comboRunStep(key){
+  if(COMBO_EXTERNAL[key]){
+    spk(COMBO_META[key].label+'，已在新分頁開啟');
+    window.open(COMBO_EXTERNAL[key], '_blank');
+    setTimeout(comboAdvance, 1000);
+    return;
+  }
+  setMode(key);
+  comboAutoStart(key);
 }
 function comboToggle(key){
   const i=comboQueue.indexOf(key);
@@ -523,9 +538,7 @@ function comboStart(){
   try{ localStorage.setItem('comboLast', JSON.stringify(comboLast)); }catch(e){}
   comboActive=true;
   comboPos=0;
-  const first=comboQueue[0];
-  setMode(first);
-  comboAutoStart(first);
+  comboRunStep(comboQueue[0]);
 }
 function comboUseLast(){
   if(!comboLast||comboLast.length===0)return;
@@ -537,7 +550,7 @@ function comboAdvance(){
   if(comboPos<comboQueue.length){
     const next=comboQueue[comboPos];
     spk('接下來：'+COMBO_META[next].label);
-    setTimeout(()=>{ setMode(next); comboAutoStart(next); },1200);
+    setTimeout(()=>{ comboRunStep(next); },1200);
   }else{
     comboActive=false;comboQueue=[];comboPos=-1;
     comboFinishScreen();
