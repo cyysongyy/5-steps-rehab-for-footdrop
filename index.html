@@ -22,6 +22,7 @@
   --rose:#d94f6e;--rosel:#fdedf2;--rosed:#9c2440;
   --glute:#3d7a4f;--glutel:#e8f5ec;--gluted:#2a5637;
   --lift:#B0522D;--liftl:#F7E7DE;--liftd:#7A3418;
+  --gait:#764ba2;--gaitl:#eef0fd;--gaitd:#4f3270;
 }
 
 /* Base */
@@ -363,6 +364,7 @@ body{
 .modal-tag.rose{background:#fde8f0;color:#c0185a}
 .modal-tag.blue{background:#e3f2fd;color:#1565c0}
 .modal-tag.lift{background:#F7E7DE;color:#7A3418}
+.modal-tag.gait{background:#eef0fd;color:#4f3270}
 .modal-close{display:block;width:100%;background:#f5f5f5;border:none;
   border-radius:12px;padding:13px;font-size:14px;font-weight:600;
   color:#555;cursor:pointer;margin-top:16px;font-family:inherit}
@@ -499,31 +501,18 @@ const COMBO_META={
   band:{label:'彈力帶訓練',num:6},
   glute:{label:'臀部啟動訓練',num:7},
   footlift:{label:'腳掌抬起',num:8},
-  gait:{label:'步態平衡訓練器',num:9}
+  gait:{label:'步態平衡訓練',num:9}
 };
 // 各模組的「開始」函式名稱，套餐模式下會自動呼叫，不需使用者手動按開始
 const COMBO_STARTERS={
   warm:'startWarm', rehab:'startEx', lumbar:'startLumbar', bedlumbar:'startBedLumbar',
-  chest:'startChest', band:'bandStartSet', glute:'startGlute', footlift:'startFootlift'
-};
-// 外部連結型套餐項目（不是內建模組，選到時開新分頁並自動接續下一項）
-const COMBO_EXTERNAL={
-  gait:'https://cyysongyy.github.io/gait/'
+  chest:'startChest', band:'bandStartSet', glute:'startGlute', footlift:'startFootlift',
+  gait:'startGait'
 };
 function comboAutoStart(key){
   const fnName=COMBO_STARTERS[key];
   if(!comboActive||!fnName||typeof window[fnName]!=='function')return;
   setTimeout(()=>{ if(mode===key) window[fnName](); }, 500);
-}
-function comboRunStep(key){
-  if(COMBO_EXTERNAL[key]){
-    spk(COMBO_META[key].label+'，已在新分頁開啟');
-    window.open(COMBO_EXTERNAL[key], '_blank');
-    setTimeout(comboAdvance, 1000);
-    return;
-  }
-  setMode(key);
-  comboAutoStart(key);
 }
 function comboToggle(key){
   const i=comboQueue.indexOf(key);
@@ -538,7 +527,9 @@ function comboStart(){
   try{ localStorage.setItem('comboLast', JSON.stringify(comboLast)); }catch(e){}
   comboActive=true;
   comboPos=0;
-  comboRunStep(comboQueue[0]);
+  const first=comboQueue[0];
+  setMode(first);
+  comboAutoStart(first);
 }
 function comboUseLast(){
   if(!comboLast||comboLast.length===0)return;
@@ -550,7 +541,7 @@ function comboAdvance(){
   if(comboPos<comboQueue.length){
     const next=comboQueue[comboPos];
     spk('接下來：'+COMBO_META[next].label);
-    setTimeout(()=>{ comboRunStep(next); },1200);
+    setTimeout(()=>{ setMode(next); comboAutoStart(next); },1200);
   }else{
     comboActive=false;comboQueue=[];comboPos=-1;
     comboFinishScreen();
@@ -717,6 +708,7 @@ function render(){
   if(mode==='band'){app.innerHTML=bandHTML();return;}
   if(mode==='glute'){app.innerHTML=gluteHTML();return;}
   if(mode==='footlift'){app.innerHTML=footliftHTML();return;}
+  if(mode==='gait'){app.innerHTML=gaitHTML();return;}
 }
 
 // ── 套餐組合 UI ──
@@ -826,6 +818,14 @@ function homeHTML(){
       <div class="mode-sub">雙腳交疊，加強腳背力量<br>腳掌內彎交疊・抬起—停留—放下</div>
     </div>
   </div>
+  <div class="mode-card" onclick="setMode('gait')" style="border-color:var(--gait)">
+    <div class="mode-icon" style="background:var(--gaitl);color:var(--gaitd)"><i class="ti ti-walk"></i></div>
+    <div class="mode-text">
+      <span class="mode-badge" style="background:var(--gaitl);color:var(--gaitd)">平衡訓練 ～2 分鐘</span>
+      <div class="mode-title">步態平衡訓練</div>
+      <div class="mode-sub">5 個平衡動作，重建步態穩定感<br>單腳站立・腳跟腳尖走路・側向移重・前後移重・閉眼站立</div>
+    </div>
+  </div>
     <a href="https://cyysongyy.github.io/rehab/" target="_blank"
       style="display:flex;align-items:center;gap:14px;padding:18px 16px;background:var(--bg);
       border-radius:var(--ra);border:2px solid #3d5a8a;text-decoration:none;color:var(--tx);
@@ -867,6 +867,7 @@ function setMode(m){
   if(m==='band'){if(bandCueTmr){clearInterval(bandCueTmr);bandCueTmr=null;}if(bandTmr){clearInterval(bandTmr);bandTmr=null;}if(typeof bandAutoTmr!=='undefined'&&bandAutoTmr){clearInterval(bandAutoTmr);bandAutoTmr=null;}bandAutoSec=0;bandCur=0;bandSet=1;bandPhase='idle';bandDone={};bandCustom={};}
   if(m==='glute'){if(gluteTmr){clearInterval(gluteTmr);gluteTmr=null;}gluteCur=0;gluteS={};}
   if(m==='footlift'){if(fltmr){clearInterval(fltmr);fltmr=null;}flS={};flStep=0;}
+  if(m==='gait'){if(gaitTmr){clearInterval(gaitTmr);gaitTmr=null;}gaitCur=0;gaitS={};}
   render();
 }
 
@@ -3199,6 +3200,219 @@ function gFinish(){
 }
 
 
+// ══════════════════════════════
+//  步態平衡訓練模組
+// ══════════════════════════════
+const GTC='#764ba2',GTL='#eef0fd',GTD='#4f3270';
+const GAIT_EX=[
+  {id:'e1',title:'單腳站立（患腳）',badge:'20秒・維持平衡',icon:'ti-yoga',
+   desc:'扶椅背，右腳單腳站立，保持平衡。',
+   tip:'垂足術後重要：腳跟先著地，感受腳底與地面接觸。',
+   vc:{s:'單腳站立開始，右腳站穩，扶著椅背，保持骨盆水平',m:'很好，繼續保持，感受腳底穩定感',e:'單腳站立完成，做得很好'},
+   dur:20},
+  {id:'e2',title:'腳跟—腳尖走路',badge:'30秒・沿直線走',icon:'ti-walk',
+   desc:'沿直線走，腳跟踩在前腳尖後方。',
+   tip:'改善步態滾動感，對垂足代償非常有效。',
+   vc:{s:'腳跟腳尖走路開始，腳跟踩在腳尖後方，眼睛看前方，放慢步速',m:'繼續，感受每一步的滾動感',e:'腳跟腳尖走路完成，做得很好'},
+   dur:30},
+  {id:'e3',title:'側向移重（左右）',badge:'40秒・左右來回',icon:'ti-arrows-horizontal',
+   desc:'站立，緩慢將重心移到右腳再回左腳。',
+   tip:'改善左右負重不均，對腰椎術後代償很重要。',
+   vc:{s:'側向移重開始，緩慢移重到右腳，感受右腳承重',m:'回到左腳，再來回移動',e:'側向移重完成，做得很好'},
+   dur:40},
+  {id:'e4',title:'前後移重',badge:'30秒・腳跟到腳尖',icon:'ti-arrows-vertical',
+   desc:'重心從腳跟慢慢移到腳尖再回來。',
+   tip:'重建步態滾動感，對腳底知覺訓練很有幫助。',
+   vc:{s:'前後移重開始，重心在腳跟，慢慢移到腳尖',m:'再移回腳跟，感受足弓',e:'前後移重完成，做得很好'},
+   dur:30},
+  {id:'e5',title:'閉眼站立',badge:'15秒・進階挑戰',icon:'ti-eye-off',
+   desc:'雙腳站立，閉眼，挑戰本體覺。',
+   tip:'進階訓練：去除視覺後的平衡調整，建議有人在旁。',
+   vc:{s:'閉眼站立開始，閉上眼睛，感受腳底與地面的接觸',m:'核心微收，保持穩定',e:'步態平衡訓練全部完成，今天做得很好！'},
+   dur:15}
+];
+let gaitCur=0,gaitS={},gaitTmr=null;
+
+function gaitStepRow(){
+  let h='<div class="steprow" id="steprow">';
+  GAIT_EX.forEach((ex,i)=>{
+    if(i>0){const d=(gaitS[GAIT_EX[i-1].id]||0)>=1;h+=`<div class="sbar" style="${d?'background:'+GTC:''}"></div>`;}
+    const d=(gaitS[ex.id]||0)>=1,c=i===gaitCur;
+    h+=`<div class="sdot" onclick="gtgo(${i})" style="cursor:pointer">
+      <div class="sn" style="${c?'background:'+GTL+';border-color:'+GTC+';color:'+GTC:d?'background:'+GTC+';border-color:'+GTC+';color:#fff':''}">
+        ${d&&!c?'<i class="ti ti-check" style="font-size:12px"></i>':i+1}
+      </div>
+      <div class="sl">${ex.title}</div>
+    </div>`;
+  });
+  return h+'</div>';
+}
+
+function gaitHTML(){
+  const ex=GAIT_EX[gaitCur];
+  const done=(gaitS[ex.id]||0)>=1;
+  const last=gaitCur===GAIT_EX.length-1;
+  const dur=ex.dur;
+  return `
+<div class="hdr">
+  <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
+  <div class="hic" style="background:${GTL}"><i class="ti ti-walk" style="font-size:18px;color:${GTC}"></i></div>
+  <div class="htx"><h1>步態平衡訓練</h1><p>平衡訓練・5 個動作</p></div>
+</div>
+${gaitStepRow()}
+<div class="vrow">
+  <i class="ti ti-volume" style="font-size:15px;color:${GTC}"></i>
+  <span class="vlbl">語音引導</span>
+  <span class="vst" id="vst" style="color:${GTC}">${voiceOn?'開啟':'關閉'}</span>
+  <button class="tgl ${voiceOn?'':'off'}" id="vtgl" onclick="togV()" style="background:${voiceOn?GTC:'#ccc'}"></button>
+</div>
+<div class="card">
+  <div class="ctop">
+    <div class="cnum" style="background:${GTL};color:${GTC}">${gaitCur+1}</div>
+    <span class="ct">${ex.title}</span>
+    <span class="cbdg" style="background:${GTL};color:${GTC};border-color:rgba(118,75,162,.25)">${ex.badge}</span>
+  </div>
+  <div class="cbody">
+    <div class="warm-block" style="border-color:${GTC}">
+      <div class="warm-block-title" style="color:${GTC}"><i class="ti ${ex.icon}"></i><span>${ex.title}</span></div>
+      <div class="warm-steps">${ex.desc.split('。').filter(s=>s.trim()).map(s=>`<div class="warm-step">${s}。</div>`).join('')}</div>
+    </div>
+    <div class="warm-tip" style="color:${GTD};background:${GTL}"><i class="ti ti-bulb" style="color:${GTC}"></i><span>${ex.tip}</span></div>
+    <div class="phi" id="gtphi" style="display:none;border-color:${GTC};background:${GTL}"><div class="phd" id="gtphd" style="background:${GTC}"></div><span id="gtpht">準備中</span></div>
+    <div class="twrap">
+      <div class="rw">
+        <svg width="84" height="84" viewBox="0 0 100 100">
+          <circle class="trk" cx="50" cy="50" r="42"/>
+          <circle class="fil" id="gtring" cx="50" cy="50" r="42" stroke-dasharray="${C42}" stroke-dashoffset="0" style="stroke:${GTC}"/>
+        </svg>
+        <div class="rlb"><span class="rn" id="gttc">${done?'✓':'--'}</span><span class="ru">秒</span></div>
+      </div>
+    </div>
+    <div class="dban" id="gtban" style="${done?'display:block;':''}background:${GTL};border-color:${GTC};color:${GTC}">✓ 完成！</div>
+    <div class="btns">
+      <button class="bgo" id="gtbgo" onclick="startGait()" style="background:${GTC}" ${done?'disabled':''}>
+        ${done?'<i class="ti ti-circle-check"></i> 已完成':'<i class="ti ti-player-play"></i> 開始（'+dur+'秒）'}
+      </button>
+      <button class="brst" onclick="gaitRst()">重置</button>
+    </div>
+    <div class="nav">
+      <button class="npv" onclick="gtgo(${gaitCur-1})" ${gaitCur===0?'disabled':''}><i class="ti ti-arrow-left"></i> 上一個</button>
+      <button class="nnx" onclick="${last?'gaitFinish()':'gtgo('+(gaitCur+1)+')'}" style="background:${GTD}">
+        ${last?'完成訓練 <i class="ti ti-flag"></i>':'下一個 <i class="ti ti-arrow-right"></i>'}
+      </button>
+    </div>
+  </div>
+</div>`;
+}
+
+let gaitAutoTmr=null,gaitAutoSec=0;
+function gaitAutoNext(nextIdx){
+  if(gaitAutoTmr){clearInterval(gaitAutoTmr);gaitAutoTmr=null;}
+  gaitAutoSec=10;
+  spk('10秒後自動開始下一個動作');
+  const nav=document.querySelector('.nav');
+  if(nav){
+    nav.innerHTML=`
+      <div style="background:${GTL};border-radius:12px;padding:12px;text-align:center;width:100%">
+        <div style="font-size:11px;color:${GTC};margin-bottom:2px">⏭ 自動開始下一個動作</div>
+        <div style="font-size:40px;font-weight:800;color:${GTD};font-family:'DM Mono',monospace;line-height:1" id="gtauto-num">10</div>
+        <div style="font-size:11px;color:${GTC};margin-top:2px">${GAIT_EX[nextIdx].title}</div>
+        <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
+          <button onclick="gaitStopAuto()" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
+          <button onclick="gaitSkipNext(${nextIdx})" style="background:${GTD};color:#fff;border:none;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">立即跳過 →</button>
+        </div>
+      </div>`;
+  }
+  gaitAutoTmr=setInterval(()=>{
+    gaitAutoSec--;
+    const el=document.getElementById('gtauto-num');
+    if(el)el.textContent=gaitAutoSec;
+    if(gaitAutoSec<=3&&gaitAutoSec>0)spk(String(gaitAutoSec));
+    if(gaitAutoSec<=0){
+      clearInterval(gaitAutoTmr);gaitAutoTmr=null;
+      gtgo(nextIdx);
+      setTimeout(startGait,500);
+    }
+  },1000);
+}
+function gaitStopAuto(){
+  if(gaitAutoTmr){clearInterval(gaitAutoTmr);gaitAutoTmr=null;}
+  render();
+}
+function gaitSkipNext(i){
+  if(gaitAutoTmr){clearInterval(gaitAutoTmr);gaitAutoTmr=null;}
+  gtgo(i);setTimeout(startGait,400);
+}
+function gtgo(i){if(gaitTmr){clearInterval(gaitTmr);gaitTmr=null;}if(gaitAutoTmr){clearInterval(gaitAutoTmr);gaitAutoTmr=null;}gaitCur=i;render();}
+function gaitRst(){if(gaitTmr){clearInterval(gaitTmr);gaitTmr=null;}gaitS[GAIT_EX[gaitCur].id]=0;render();}
+
+function startGait(){
+  if(gaitTmr)return;
+  const ex=GAIT_EX[gaitCur];
+  const btn=document.getElementById('gtbgo');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> 進行中…';}
+  spk(ex.vc.s);
+  setTimeout(()=>{if(mode==='gait')runGait(ex.dur);},1500);
+}
+
+function runGait(totalSec){
+  const ex=GAIT_EX[gaitCur];
+  let left=totalSec;
+  const ring=document.getElementById('gtring');
+  const tc=document.getElementById('gttc');
+  const phi=document.getElementById('gtphi');
+  const pht=document.getElementById('gtpht');
+  if(phi)phi.style.display='flex';
+  if(pht)pht.textContent='進行中';
+  const mid=Math.floor(totalSec/2);
+  gaitTmr=setInterval(()=>{
+    if(mode!=='gait'){clearInterval(gaitTmr);gaitTmr=null;return;}
+    left--;
+    if(tc)tc.textContent=left;
+    if(ring){const pct=left/totalSec;ring.style.strokeDashoffset=C42*pct;}
+    if(left===mid)spk(ex.vc.m);
+    if(left<=0){
+      clearInterval(gaitTmr);gaitTmr=null;
+      gaitS[ex.id]=1;
+      spk(ex.vc.e);
+      const ban=document.getElementById('gtban'),gtbgo=document.getElementById('gtbgo');
+      if(ban)ban.style.display='block';
+      if(gtbgo){gtbgo.innerHTML='<i class="ti ti-circle-check"></i> 已完成';gtbgo.style.background=GTD;gtbgo.disabled=true;}
+      if(phi)phi.style.display='none';
+      if(tc)tc.textContent='✓';
+      const sr=document.getElementById('steprow');if(sr)sr.outerHTML=gaitStepRow();
+      const isLast=gaitCur===GAIT_EX.length-1;
+      if(!isLast){ gaitAutoNext(gaitCur+1); }else if(comboActive){setTimeout(()=>{if(mode==='gait'&&comboActive)gaitFinish();},1500);}
+    }
+  },1000);
+}
+
+function gaitFinish(){
+  if(gaitTmr){clearInterval(gaitTmr);gaitTmr=null;}
+  if(comboActive){comboAdvance();return;}
+  spk('步態平衡訓練全部完成！每天練習，平衡感會慢慢進步。');
+  const app=document.getElementById('app');
+  const mins=Math.round(GAIT_EX.reduce((a,e)=>a+e.dur,0)/60);
+  app.innerHTML=`
+<div class="hdr">
+  <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
+  <div class="hic" style="background:${GTL}"><i class="ti ti-walk" style="font-size:18px;color:${GTC}"></i></div>
+  <div class="htx"><h1>步態平衡訓練</h1><p>訓練完成</p></div>
+</div>
+<div class="card">
+  <div class="cbody" style="text-align:center;padding:24px 0">
+    <div style="font-size:48px;margin-bottom:12px">🎉</div>
+    <h2 style="font-size:20px;font-weight:800;color:${GTC};margin-bottom:8px">訓練完成！</h2>
+    <p style="color:var(--tx2);font-size:13px;line-height:1.8">完成 <strong>5</strong> 個動作 · 約 <strong>${mins}</strong> 分鐘<br><br>
+    每天練習平衡動作，<br>步態穩定度會慢慢改善。</p>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button class="bres" onclick="setMode('gait')" style="background:${GTC}"><i class="ti ti-refresh"></i> 再做一次</button>
+    <button class="bres green" onclick="backHome()"><i class="ti ti-home"></i> 回首頁</button>
+  </div>
+</div>`;
+}
+
 function openInfoModal(){
   document.getElementById('info-modal').classList.add('open');
   document.body.style.overflow='hidden';
@@ -3242,7 +3456,8 @@ function closeInfoModal(e){
     <span class="modal-tag rose">擴胸運動</span>坐臥兩種姿勢<br>
     <span class="modal-tag orange">彈力帶訓練</span>全身阻力 7 組<br>
     <span class="modal-tag green">臀部啟動</span>代償修正 3 動作<br>
-    <span class="modal-tag lift">腳掌抬起</span>單一動作，交疊訓練腳背力量
+    <span class="modal-tag lift">腳掌抬起</span>單一動作，交疊訓練腳背力量<br>
+    <span class="modal-tag gait">步態平衡訓練</span>5 個平衡動作，重建步態穩定感
 
     <h3>🔊 語音引導</h3>
     <p>使用裝置內建語音（中文 zh-TW），需在手機瀏覽器授權朗讀功能。首次使用若無聲音，請在設定中確認語音合成已開啟。</p>
