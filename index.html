@@ -23,6 +23,7 @@
   --glute:#3d7a4f;--glutel:#e8f5ec;--gluted:#2a5637;
   --lift:#B0522D;--liftl:#F7E7DE;--liftd:#7A3418;
   --gait:#764ba2;--gaitl:#eef0fd;--gaitd:#4f3270;
+  --prop:#3949ab;--propl:#e8eaf6;--propd:#1a237e;
 }
 
 /* Base */
@@ -365,6 +366,7 @@ body{
 .modal-tag.blue{background:#e3f2fd;color:#1565c0}
 .modal-tag.lift{background:#F7E7DE;color:#7A3418}
 .modal-tag.gait{background:#eef0fd;color:#4f3270}
+.modal-tag.prop{background:#e8eaf6;color:#1a237e}
 .modal-close{display:block;width:100%;background:#f5f5f5;border:none;
   border-radius:12px;padding:13px;font-size:14px;font-weight:600;
   color:#555;cursor:pointer;margin-top:16px;font-family:inherit}
@@ -501,13 +503,14 @@ const COMBO_META={
   band:{label:'彈力帶訓練',num:6},
   glute:{label:'臀部啟動訓練',num:7},
   footlift:{label:'腳掌抬起',num:8},
-  gait:{label:'步態平衡訓練',num:9}
+  gait:{label:'步態平衡訓練',num:9},
+  prop:{label:'本體覺訓練',num:10}
 };
 // 各模組的「開始」函式名稱，套餐模式下會自動呼叫，不需使用者手動按開始
 const COMBO_STARTERS={
   warm:'startWarm', rehab:'startEx', lumbar:'startLumbar', bedlumbar:'startBedLumbar',
   chest:'startChest', band:'bandStartSet', glute:'startGlute', footlift:'startFootlift',
-  gait:'startGait'
+  gait:'startGait', prop:'startProp'
 };
 function comboAutoStart(key){
   const fnName=COMBO_STARTERS[key];
@@ -709,6 +712,7 @@ function render(){
   if(mode==='glute'){app.innerHTML=gluteHTML();return;}
   if(mode==='footlift'){app.innerHTML=footliftHTML();return;}
   if(mode==='gait'){app.innerHTML=gaitHTML();return;}
+  if(mode==='prop'){app.innerHTML=propHTML();return;}
 }
 
 // ── 套餐組合 UI ──
@@ -826,6 +830,14 @@ function homeHTML(){
       <div class="mode-sub">5 個平衡動作，重建步態穩定感<br>單腳站立・腳跟腳尖走路・側向移重・前後移重・閉眼站立</div>
     </div>
   </div>
+  <div class="mode-card" onclick="setMode('prop')" style="border-color:var(--prop)">
+    <div class="mode-icon" style="background:var(--propl);color:var(--propd)"><i class="ti ti-brain"></i></div>
+    <div class="mode-text">
+      <span class="mode-badge" style="background:var(--propl);color:var(--propd)">本體覺階梯 ～10 分鐘</span>
+      <div class="mode-title">本體覺訓練</div>
+      <div class="mode-sub">7 階動態本體覺，重塑大腦與腳的連繫<br>閉眼單腳站・前後／左右移重・單腳點地・單腳蹲・踏步煞車・慢速走路</div>
+    </div>
+  </div>
     <a href="https://cyysongyy.github.io/rehab/" target="_blank"
       style="display:flex;align-items:center;gap:14px;padding:18px 16px;background:var(--bg);
       border-radius:var(--ra);border:2px solid #3d5a8a;text-decoration:none;color:var(--tx);
@@ -868,6 +880,7 @@ function setMode(m){
   if(m==='glute'){if(gluteTmr){clearInterval(gluteTmr);gluteTmr=null;}gluteCur=0;gluteS={};}
   if(m==='footlift'){if(fltmr){clearInterval(fltmr);fltmr=null;}flS={};flStep=0;}
   if(m==='gait'){if(gaitTmr){clearInterval(gaitTmr);gaitTmr=null;}gaitCur=0;gaitS={};}
+  if(m==='prop'){if(propTmr){clearInterval(propTmr);propTmr=null;}propCur=0;propS={};}
   render();
 }
 
@@ -3413,6 +3426,229 @@ function gaitFinish(){
 </div>`;
 }
 
+// ══════════════════════════════
+//  本體覺訓練模組
+// ══════════════════════════════
+const PPC='#3949ab',PPL='#e8eaf6',PPD='#1a237e';
+const PROP_EX=[
+  {id:'p1',title:'閉眼單腳站',badge:'5~10秒・做3~5組',icon:'ti-eye-off',
+   desc:'右腳單腳站立，慢慢閉上眼睛，感受腳踝與足弓的微幅擺動。',
+   tip:'關鍵感受點：關閉視覺後，專注感應右腳踝、足弓的微小晃動。',
+   vc:{s:'閉眼單腳站開始，右腳站穩，慢慢閉上眼睛',m:'感受腳踝與足弓的微幅擺動，保持穩定',e:'閉眼單腳站完成，做得很好'},
+   dur:30},
+  {id:'p2',title:'單腳站＋前後移重',badge:'前後往返5~8次',icon:'ti-arrows-vertical',
+   desc:'單腳站立，重心在前腳掌、足弓、腳跟之間慢慢前後移動。',
+   tip:'關鍵感受點：感受「壓力中心」在腳跟、足弓與前腳掌間滑動。',
+   vc:{s:'單腳站前後移重開始，重心慢慢往前移到前腳掌',m:'再慢慢移回腳跟，感受足弓的變化',e:'前後移重完成，做得很好'},
+   dur:25},
+  {id:'p3',title:'單腳站＋左右移重',badge:'左右往返5~8次',icon:'ti-arrows-horizontal',
+   desc:'單腳站立，重心左右微幅傾斜，練習快要失去平衡時把它拉回來。',
+   tip:'關鍵感受點：感受右腳內外側緣的肌肉如何自動拉回重心。',
+   vc:{s:'單腳站左右移重開始，重心慢慢往外側傾',m:'感受快要失去平衡的瞬間，把重心拉回來',e:'左右移重完成，做得很好'},
+   dur:25},
+  {id:'p4',title:'單腳點地（多方向探測）',badge:'一圈為1次・做3圈',icon:'ti-compass',
+   desc:'右腳為軸心站穩，左腳依序輕點前、左前、左、左後、後五個方位後回中。',
+   tip:'關鍵感受點：右腳為不動軸心，訓練支撐腳的動態控制。',
+   vc:{s:'單腳點地開始，右腳站穩，左腳依序輕點前方、左前方',m:'繼續點左方、左後方、後方，保持右腳穩定',e:'單腳點地完成，做得很好'},
+   dur:40},
+  {id:'p5',title:'小幅度單腳蹲',badge:'5~8次・彎曲10~20°',icon:'ti-activity',
+   desc:'單腳站立，膝蓋微彎10~20度後站起，注意膝蓋不內扣、足弓不塌陷、腳趾不抓地。',
+   tip:'關鍵感受點：膝蓋不內扣、足弓不塌陷、腳趾放鬆不繃緊。',
+   vc:{s:'小幅度單腳蹲開始，膝蓋微彎，注意足弓不塌陷',m:'慢慢站起，腳趾放鬆不抓地',e:'小幅度單腳蹲完成，做得很好'},
+   dur:25},
+  {id:'p6',title:'踏步＋停住（瞬間煞車）',badge:'前/側/後各踏5次',icon:'ti-player-stop',
+   desc:'向前、側邊、後方跨步後瞬間煞車停住，讓大腦重新確認右腳的位置與重心。',
+   tip:'關鍵感受點：每次「停住」的瞬間，大腦重新確認：我的右腳現在在哪裡？重心穩嗎？',
+   vc:{s:'踏步停住開始，跨步後瞬間煞車，停住三秒',m:'換個方向，繼續跨步停住',e:'踏步煞車完成，做得很好'},
+   dur:45},
+  {id:'p7',title:'慢速走路（分段落腳）',badge:'10~15步・重複3次',icon:'ti-walk',
+   desc:'放慢速度走路，清楚感受腳跟著地、全足承重、前腳掌推蹬、換腳的每一個轉換。',
+   tip:'關鍵感受點：像播放慢動作影片一樣，清晰感受每一次轉換，重塑步態記憶。',
+   vc:{s:'慢速走路開始，腳跟先著地，慢慢感受全足承重',m:'前腳掌推蹬，換腳，保持節奏放慢',e:'本體覺訓練全部完成，今天做得很好！'},
+   dur:60}
+];
+let propCur=0,propS={},propTmr=null;
+
+function propStepRow(){
+  let h='<div class="steprow" id="steprow">';
+  PROP_EX.forEach((ex,i)=>{
+    if(i>0){const d=(propS[PROP_EX[i-1].id]||0)>=1;h+=`<div class="sbar" style="${d?'background:'+PPC:''}"></div>`;}
+    const d=(propS[ex.id]||0)>=1,c=i===propCur;
+    h+=`<div class="sdot" onclick="ptgo(${i})" style="cursor:pointer">
+      <div class="sn" style="${c?'background:'+PPL+';border-color:'+PPC+';color:'+PPC:d?'background:'+PPC+';border-color:'+PPC+';color:#fff':''}">
+        ${d&&!c?'<i class="ti ti-check" style="font-size:12px"></i>':i+1}
+      </div>
+      <div class="sl">${ex.title}</div>
+    </div>`;
+  });
+  return h+'</div>';
+}
+
+function propHTML(){
+  const ex=PROP_EX[propCur];
+  const done=(propS[ex.id]||0)>=1;
+  const last=propCur===PROP_EX.length-1;
+  const dur=ex.dur;
+  return `
+<div class="hdr">
+  <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
+  <div class="hic" style="background:${PPL}"><i class="ti ti-brain" style="font-size:18px;color:${PPC}"></i></div>
+  <div class="htx"><h1>本體覺訓練</h1><p>動態本體覺階梯・7 個動作</p></div>
+</div>
+${propStepRow()}
+<div class="vrow">
+  <i class="ti ti-volume" style="font-size:15px;color:${PPC}"></i>
+  <span class="vlbl">語音引導</span>
+  <span class="vst" id="vst" style="color:${PPC}">${voiceOn?'開啟':'關閉'}</span>
+  <button class="tgl ${voiceOn?'':'off'}" id="vtgl" onclick="togV()" style="background:${voiceOn?PPC:'#ccc'}"></button>
+</div>
+<div class="card">
+  <div class="ctop">
+    <div class="cnum" style="background:${PPL};color:${PPC}">${propCur+1}</div>
+    <span class="ct">${ex.title}</span>
+    <span class="cbdg" style="background:${PPL};color:${PPC};border-color:rgba(57,73,171,.25)">${ex.badge}</span>
+  </div>
+  <div class="cbody">
+    <div class="warm-block" style="border-color:${PPC}">
+      <div class="warm-block-title" style="color:${PPC}"><i class="ti ${ex.icon}"></i><span>${ex.title}</span></div>
+      <div class="warm-steps">${ex.desc.split('。').filter(s=>s.trim()).map(s=>`<div class="warm-step">${s}。</div>`).join('')}</div>
+    </div>
+    <div class="warm-tip" style="color:${PPD};background:${PPL}"><i class="ti ti-bulb" style="color:${PPC}"></i><span>${ex.tip}</span></div>
+    <div class="phi" id="ppphi" style="display:none;border-color:${PPC};background:${PPL}"><div class="phd" id="ppphd" style="background:${PPC}"></div><span id="pppht">準備中</span></div>
+    <div class="twrap">
+      <div class="rw">
+        <svg width="84" height="84" viewBox="0 0 100 100">
+          <circle class="trk" cx="50" cy="50" r="42"/>
+          <circle class="fil" id="ppring" cx="50" cy="50" r="42" stroke-dasharray="${C42}" stroke-dashoffset="0" style="stroke:${PPC}"/>
+        </svg>
+        <div class="rlb"><span class="rn" id="pptc">${done?'✓':'--'}</span><span class="ru">秒</span></div>
+      </div>
+    </div>
+    <div class="dban" id="ppban" style="${done?'display:block;':''}background:${PPL};border-color:${PPC};color:${PPC}">✓ 完成！</div>
+    <div class="btns">
+      <button class="bgo" id="ppbgo" onclick="startProp()" style="background:${PPC}" ${done?'disabled':''}>
+        ${done?'<i class="ti ti-circle-check"></i> 已完成':'<i class="ti ti-player-play"></i> 開始（'+dur+'秒）'}
+      </button>
+      <button class="brst" onclick="propRst()">重置</button>
+    </div>
+    <div class="nav">
+      <button class="npv" onclick="ptgo(${propCur-1})" ${propCur===0?'disabled':''}><i class="ti ti-arrow-left"></i> 上一個</button>
+      <button class="nnx" onclick="${last?'propFinish()':'ptgo('+(propCur+1)+')'}" style="background:${PPD}">
+        ${last?'完成訓練 <i class="ti ti-flag"></i>':'下一個 <i class="ti ti-arrow-right"></i>'}
+      </button>
+    </div>
+  </div>
+</div>`;
+}
+
+let propAutoTmr=null,propAutoSec=0;
+function propAutoNext(nextIdx){
+  if(propAutoTmr){clearInterval(propAutoTmr);propAutoTmr=null;}
+  propAutoSec=10;
+  spk('10秒後自動開始下一個動作');
+  const nav=document.querySelector('.nav');
+  if(nav){
+    nav.innerHTML=`
+      <div style="background:${PPL};border-radius:12px;padding:12px;text-align:center;width:100%">
+        <div style="font-size:11px;color:${PPC};margin-bottom:2px">⏭ 自動開始下一個動作</div>
+        <div style="font-size:40px;font-weight:800;color:${PPD};font-family:'DM Mono',monospace;line-height:1" id="ppauto-num">10</div>
+        <div style="font-size:11px;color:${PPC};margin-top:2px">${PROP_EX[nextIdx].title}</div>
+        <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
+          <button onclick="propStopAuto()" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
+          <button onclick="propSkipNext(${nextIdx})" style="background:${PPD};color:#fff;border:none;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">立即跳過 →</button>
+        </div>
+      </div>`;
+  }
+  propAutoTmr=setInterval(()=>{
+    propAutoSec--;
+    const el=document.getElementById('ppauto-num');
+    if(el)el.textContent=propAutoSec;
+    if(propAutoSec<=3&&propAutoSec>0)spk(String(propAutoSec));
+    if(propAutoSec<=0){
+      clearInterval(propAutoTmr);propAutoTmr=null;
+      ptgo(nextIdx);
+      setTimeout(startProp,500);
+    }
+  },1000);
+}
+function propStopAuto(){
+  if(propAutoTmr){clearInterval(propAutoTmr);propAutoTmr=null;}
+  render();
+}
+function propSkipNext(i){
+  if(propAutoTmr){clearInterval(propAutoTmr);propAutoTmr=null;}
+  ptgo(i);setTimeout(startProp,400);
+}
+function ptgo(i){if(propTmr){clearInterval(propTmr);propTmr=null;}if(propAutoTmr){clearInterval(propAutoTmr);propAutoTmr=null;}propCur=i;render();}
+function propRst(){if(propTmr){clearInterval(propTmr);propTmr=null;}propS[PROP_EX[propCur].id]=0;render();}
+
+function startProp(){
+  if(propTmr)return;
+  const ex=PROP_EX[propCur];
+  const btn=document.getElementById('ppbgo');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> 進行中…';}
+  spk(ex.vc.s);
+  setTimeout(()=>{if(mode==='prop')runProp(ex.dur);},1500);
+}
+
+function runProp(totalSec){
+  const ex=PROP_EX[propCur];
+  let left=totalSec;
+  const ring=document.getElementById('ppring');
+  const tc=document.getElementById('pptc');
+  const phi=document.getElementById('ppphi');
+  const pht=document.getElementById('pppht');
+  if(phi)phi.style.display='flex';
+  if(pht)pht.textContent='進行中';
+  const mid=Math.floor(totalSec/2);
+  propTmr=setInterval(()=>{
+    if(mode!=='prop'){clearInterval(propTmr);propTmr=null;return;}
+    left--;
+    if(tc)tc.textContent=left;
+    if(ring){const pct=left/totalSec;ring.style.strokeDashoffset=C42*pct;}
+    if(left===mid)spk(ex.vc.m);
+    if(left<=0){
+      clearInterval(propTmr);propTmr=null;
+      propS[ex.id]=1;
+      spk(ex.vc.e);
+      const ban=document.getElementById('ppban'),ppbgo=document.getElementById('ppbgo');
+      if(ban)ban.style.display='block';
+      if(ppbgo){ppbgo.innerHTML='<i class="ti ti-circle-check"></i> 已完成';ppbgo.style.background=PPD;ppbgo.disabled=true;}
+      if(phi)phi.style.display='none';
+      if(tc)tc.textContent='✓';
+      const sr=document.getElementById('steprow');if(sr)sr.outerHTML=propStepRow();
+      const isLast=propCur===PROP_EX.length-1;
+      if(!isLast){ propAutoNext(propCur+1); }else if(comboActive){setTimeout(()=>{if(mode==='prop'&&comboActive)propFinish();},1500);}
+    }
+  },1000);
+}
+
+function propFinish(){
+  if(propTmr){clearInterval(propTmr);propTmr=null;}
+  if(comboActive){comboAdvance();return;}
+  spk('本體覺訓練全部完成！每天練習，大腦與腳的連繫會慢慢重建。');
+  const app=document.getElementById('app');
+  const mins=Math.round(PROP_EX.reduce((a,e)=>a+e.dur,0)/60);
+  app.innerHTML=`
+<div class="hdr">
+  <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
+  <div class="hic" style="background:${PPL}"><i class="ti ti-brain" style="font-size:18px;color:${PPC}"></i></div>
+  <div class="htx"><h1>本體覺訓練</h1><p>訓練完成</p></div>
+</div>
+<div class="card">
+  <div class="cbody" style="text-align:center;padding:24px 0">
+    <div style="font-size:48px;margin-bottom:12px">🎉</div>
+    <h2 style="font-size:20px;font-weight:800;color:${PPC};margin-bottom:8px">訓練完成！</h2>
+    <p style="color:var(--tx2);font-size:13px;line-height:1.8">完成 <strong>7</strong> 個動作 · 約 <strong>${mins}</strong> 分鐘<br><br>
+    從最安全的閉眼單腳站，<br>一路做到慢速走路，<br>大腦與腳的連繫會慢慢重建。</p>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button class="bres" onclick="setMode('prop')" style="background:${PPC}"><i class="ti ti-refresh"></i> 再做一次</button>
+    <button class="bres green" onclick="backHome()"><i class="ti ti-home"></i> 回首頁</button>
+  </div>
+</div>`;
+}
+
 function openInfoModal(){
   document.getElementById('info-modal').classList.add('open');
   document.body.style.overflow='hidden';
@@ -3457,7 +3693,8 @@ function closeInfoModal(e){
     <span class="modal-tag orange">彈力帶訓練</span>全身阻力 7 組<br>
     <span class="modal-tag green">臀部啟動</span>代償修正 3 動作<br>
     <span class="modal-tag lift">腳掌抬起</span>單一動作，交疊訓練腳背力量<br>
-    <span class="modal-tag gait">步態平衡訓練</span>5 個平衡動作，重建步態穩定感
+    <span class="modal-tag gait">步態平衡訓練</span>5 個平衡動作，重建步態穩定感<br>
+    <span class="modal-tag prop">本體覺訓練</span>7 階動態本體覺，重塑大腦與腳的連繫
 
     <h3>🔊 語音引導</h3>
     <p>使用裝置內建語音（中文 zh-TW），需在手機瀏覽器授權朗讀功能。首次使用若無聲音，請在設定中確認語音合成已開啟。</p>
