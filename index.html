@@ -3476,7 +3476,33 @@ const PROP_EX=[
    vc:{s:'慢速走路開始，腳跟先著地，慢慢感受全足承重',m:'前腳掌推蹬，換腳，保持節奏放慢',e:'本體覺訓練全部完成，今天做得很好！'},
    dur:60}
 ];
-let propCur=0,propS={},propTmr=null;
+let propCur=0,propS={},propTmr=null,customProp={};
+function getPropDur(id){
+  if(customProp[id]&&customProp[id].dur!==undefined)return customProp[id].dur;
+  try{const saved=localStorage.getItem('propDur_'+id);if(saved!==null)return parseInt(saved);}catch(e){}
+  return PROP_EX.find(e=>e.id===id).dur;
+}
+function isPropModified(id){const d=PROP_EX.find(e=>e.id===id);return getPropDur(id)!==d.dur;}
+function propDurChipHTML(id,dur,mod){
+  return`<div class="chip${mod?' mod':''}" style="flex:0 0 150px">
+    <div class="chip-label" style="${mod?'color:'+PPD:''}">本動作時間（秒）${mod?' ✎':''}</div>
+    <div class="stepper">
+      <button class="stp-btn" style="border-color:${PPC};color:${PPC}" onclick="event.stopPropagation();updatePropChip('${id}',-5,10,180)">−</button>
+      <span class="stp-val" style="color:${PPD}">${dur}</span>
+      <button class="stp-btn" style="border-color:${PPC};color:${PPC}" onclick="event.stopPropagation();updatePropChip('${id}',5,10,180)">+</button>
+    </div>
+  </div>`;
+}
+function updatePropChip(id,delta,min,max){
+  if(!customProp[id])customProp[id]={};
+  const cur=getPropDur(id);
+  const newVal=Math.max(min,Math.min(max,cur+delta));
+  customProp[id].dur=newVal;
+  try{localStorage.setItem('propDur_'+id,newVal);}catch(e){}
+  if(propTmr){clearInterval(propTmr);propTmr=null;}
+  propS[id]=0;
+  render();
+}
 
 function propStepRow(){
   let h='<div class="steprow" id="steprow">';
@@ -3497,7 +3523,7 @@ function propHTML(){
   const ex=PROP_EX[propCur];
   const done=(propS[ex.id]||0)>=1;
   const last=propCur===PROP_EX.length-1;
-  const dur=ex.dur;
+  const dur=getPropDur(ex.id),ppmod=isPropModified(ex.id);
   return `
 <div class="hdr">
   <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
@@ -3515,7 +3541,7 @@ ${propStepRow()}
   <div class="ctop">
     <div class="cnum" style="background:${PPL};color:${PPC}">${propCur+1}</div>
     <span class="ct">${ex.title}</span>
-    <span class="cbdg" style="background:${PPL};color:${PPC};border-color:rgba(57,73,171,.25)">${ex.badge}</span>
+    <span class="cbdg" style="background:${PPL};color:${PPC};border-color:rgba(57,73,171,.25)">${ex.badge}${ppmod?' ✎':''}</span>
   </div>
   <div class="cbody">
     <div style="border-radius:12px;overflow:hidden;margin-bottom:10px;border:1px solid rgba(57,73,171,.2)">
@@ -3526,6 +3552,10 @@ ${propStepRow()}
       <div class="warm-steps">${ex.desc.split('。').filter(s=>s.trim()).map(s=>`<div class="warm-step">${s}。</div>`).join('')}</div>
     </div>
     <div class="warm-tip" style="color:${PPD};background:${PPL}"><i class="ti ti-bulb" style="color:${PPC}"></i><span>${ex.tip}</span></div>
+    <div class="tip"><i class="ti ti-adjustments-horizontal" style="font-size:14px;color:${PPC}"></i><span>點 <strong>＋ / −</strong> 可調整本動作時間${done?'（重置後生效）':''}</span></div>
+    <div class="chips" style="display:flex;justify-content:center">
+      ${propDurChipHTML(ex.id,dur,ppmod)}
+    </div>
     <div class="phi" id="ppphi" style="display:none;border-color:${PPC};background:${PPL}"><div class="phd" id="ppphd" style="background:${PPC}"></div><span id="pppht">準備中</span></div>
     <div class="twrap">
       <div class="rw">
@@ -3600,7 +3630,7 @@ function startProp(){
   const btn=document.getElementById('ppbgo');
   if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> 進行中…';}
   spk(ex.vc.s);
-  setTimeout(()=>{if(mode==='prop')runProp(ex.dur);},1500);
+  setTimeout(()=>{if(mode==='prop')runProp(getPropDur(ex.id));},1500);
 }
 
 function runProp(totalSec){
@@ -3640,7 +3670,7 @@ function propFinish(){
   if(comboActive){comboAdvance();return;}
   spk('本體覺訓練全部完成！每天練習，大腦與腳的連繫會慢慢重建。');
   const app=document.getElementById('app');
-  const mins=Math.round(PROP_EX.reduce((a,e)=>a+e.dur,0)/60);
+  const mins=Math.round(PROP_EX.reduce((a,e)=>a+getPropDur(e.id),0)/60);
   app.innerHTML=`
 <div class="hdr">
   <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
