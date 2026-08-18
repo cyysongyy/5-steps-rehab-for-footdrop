@@ -2363,8 +2363,8 @@ function finishBedLumbar(){
 
 const CHEST = [
   {id:'chest_sit', title:'坐姿擴胸', badge:'坐姿', icon:'ti-armchair',
-   sets:3, holdSec:30, restSec:30, reps:10,
-   vc:{s:'坐姿擴胸，挺胸收腹，肩胛骨下壓後收，準備開始',m:'感受胸肌用力，控制速度，吐氣推出',e:'一組完成，休息三十秒'},
+   sets:3, restSec:10, reps:10,
+   vc:{s:'坐姿擴胸，挺胸收腹，肩胛骨下壓後收，準備開始',m:'感受胸肌用力，控制速度，吐氣推出'},
    inst:'<strong>坐姿</strong>，挺胸收腹，雙腳踩實，肩胛骨下壓後收。啞鈴舉至胸部兩側。吐氣：啞鈴對夾往前推 <em>或</em> 身體微前傾做飛鳥。吸氣：<strong>3秒控制下放</strong>，感受胸肌拉伸。每組 10 下。',
    tip:'手肘不鎖死，下放時感受胸肌完全延展。坐姿不完全伸展肩膀，以先太低。',
    steps:[
@@ -2374,8 +2374,8 @@ const CHEST = [
      {title:'離心控制', lines:['吸氣，3秒控制下放','感受擴胸拉伸','手肘不鎖死，安全控制節奏']}
    ]},
   {id:'chest_lie', title:'臥姿擴胸', badge:'躺下', icon:'ti-bed-flat',
-   sets:3, holdSec:30, restSec:30, reps:10,
-   vc:{s:'臥姿擴胸，仰躺或上斜，雙腳踩實，肩胛骨下壓後收，準備推起',m:'吐氣，向天花板方向垂直推起，感受胸肌擠壓',e:'一組完成，休息三十秒'},
+   sets:3, restSec:10, reps:10,
+   vc:{s:'臥姿擴胸，仰躺或上斜，雙腳踩實，肩胛骨下壓後收，準備推起',m:'吐氣，向天花板方向垂直推起，感受胸肌擠壓'},
    inst:'<strong>仰躺</strong>（平躺或上斜），雙腳踩實，肩胛骨下壓後收。啞鈴位於胸部兩側。吐氣：向上垂直推起，感受胸肌擠壓。吸氣：<strong>3秒控制下放</strong>，手肘與身體夾角安全，感受胸大肌延展。每組 10 下。',
    tip:'手肘夾角保持安全，不完全打開肩膀或夾緊胸肌過度拉伸。繼續傳遞刺激與集中擠壓。',
    steps:[
@@ -2393,6 +2393,14 @@ const CHEST_IMGS = {
 let chcur=0, chSets={}, chtmr=null, chSS=null, totChS=0;
 let customCh={};
 
+// 擴胸每下口令：抬起(123)→停止(12345)→放下(123)，每個字/數字各念1秒，語速放慢
+const CHEST_CUE=['抬起','一','二','三','停止','一','二','三','四','五','放下','一','二','三'];
+const CHEST_CUE_LEN=CHEST_CUE.length;
+function chestCuePhase(cueIdx){
+  if(cueIdx<4)return'抬起中';
+  if(cueIdx<10)return'停止中';
+  return'放下中';
+}
 function getChVal(id,key){
   if(customCh[id]&&customCh[id][key]!==undefined)return customCh[id][key];
   return CHEST.find(e=>e.id===id)[key];
@@ -2400,7 +2408,7 @@ function getChVal(id,key){
 function isChModified(id){
   const d=CHEST.find(e=>e.id===id);
   if(!customCh[id])return false;
-  return(customCh[id].sets!==undefined&&customCh[id].sets!==d.sets)||(customCh[id].holdSec!==undefined&&customCh[id].holdSec!==d.holdSec);
+  return(customCh[id].sets!==undefined&&customCh[id].sets!==d.sets)||(customCh[id].reps!==undefined&&customCh[id].reps!==d.reps);
 }
 
 function chestStepRow(){
@@ -2426,13 +2434,13 @@ function chSetsChipHTML(id,sets,mod){
     </div>
   </div>`;
 }
-function chHoldChipHTML(id,hold,mod){
+function chRepsChipHTML(id,reps,mod){
   return`<div class="chip${mod?' mod':''}">
-    <div class="chip-label${mod?' mod':''}">保持秒${mod?' ✎':''}</div>
+    <div class="chip-label${mod?' mod':''}">次數${mod?' ✎':''}</div>
     <div class="stepper">
-      <button class="stp-btn" style="border-color:var(--rose);color:var(--rose)" onclick="event.stopPropagation();updateChChip('${id}','holdSec',-5,5,60)">−</button>
-      <span class="stp-val" style="color:var(--rosed)">${hold}</span>
-      <button class="stp-btn" style="border-color:var(--rose);color:var(--rose)" onclick="event.stopPropagation();updateChChip('${id}','holdSec',5,5,60)">+</button>
+      <button class="stp-btn" style="border-color:var(--rose);color:var(--rose)" onclick="event.stopPropagation();updateChChip('${id}','reps',-1,4,20)">−</button>
+      <span class="stp-val" style="color:var(--rosed)">${reps}</span>
+      <button class="stp-btn" style="border-color:var(--rose);color:var(--rose)" onclick="event.stopPropagation();updateChChip('${id}','reps',1,4,20)">+</button>
     </div>
   </div>`;
 }
@@ -2464,9 +2472,9 @@ function chestHTML(){
   const done=(chSets[ex.id]||0)>=getChVal(ex.id,'sets');
   const last=chcur===CHEST.length-1;
   const sets=getChVal(ex.id,'sets');
-  const hold=getChVal(ex.id,'holdSec');
+  const reps=getChVal(ex.id,'reps');
+  const hold=reps*CHEST_CUE_LEN;
   const chmod=isChModified(ex.id);
-  const reps=ex.reps;
   const totalTime=sets*(hold+getChVal(ex.id,'restSec'));
   const mins=Math.floor(totalTime/60),secs=totalTime%60;
   const durStr=mins>0?(secs>0?mins+'分'+secs+'秒':mins+'分鐘'):totalTime+'秒';
@@ -2502,10 +2510,10 @@ ${chestStepRow()}
   <div class="cbody">
     ${CHEST_IMGS[ex.id]?`<div style="border-radius:12px;overflow:hidden;border:1px solid var(--br);margin-bottom:4px"><img src="${CHEST_IMGS[ex.id]}" alt="${ex.title}" style="width:100%;height:auto;display:block"></div>`:`<div class="warm-block" style="border-color:var(--rose)"><div class="warm-block-title" style="color:var(--rosed)"><i class="ti ${ex.icon}"></i><span>動作說明</span></div><div style="font-size:13px;color:var(--tx2);line-height:1.8">${ex.inst}</div></div><div style="display:flex;flex-direction:column;gap:6px" id="ch-steps">${stepsHTML}</div>`}
     <div class="warm-tip" style="color:var(--rosed);background:var(--rosel)"><i class="ti ti-bulb" style="color:var(--rose)"></i><span>${ex.tip}</span></div>
-    <div class="tip"><i class="ti ti-adjustments-horizontal" style="font-size:14px;color:var(--rose)"></i><span>點 <strong>＋ / −</strong> 可調整組數與保持秒數</span></div>
+    <div class="tip"><i class="ti ti-adjustments-horizontal" style="font-size:14px;color:var(--rose)"></i><span>點 <strong>＋ / −</strong> 可調整組數與次數</span></div>
     <div class="chips">
       ${chSetsChipHTML(ex.id,sets,chmod)}
-      ${chHoldChipHTML(ex.id,hold,chmod)}
+      ${chRepsChipHTML(ex.id,reps,chmod)}
       ${chDoneChipHTML(ex.id)}
     </div>
     <div class="phi" id="phi" style="display:none;border-color:var(--rose);background:var(--rosel)"><div class="phd" id="phd" style="background:var(--rose)"></div><span id="pht">準備中</span></div>
@@ -2549,47 +2557,38 @@ function startChest(){
 
 function runChestSet(id,ex,n){
   const sets=getChVal(id,'sets');
-  const hold=getChVal(id,'holdSec');
+  const reps=getChVal(id,'reps');
   const rest=getChVal(id,'restSec');
-  const reps=ex.reps||10;
-  const repDur=Math.max(2,Math.round(hold/reps));
-  const ecSec=Math.max(1,Math.floor(repDur*0.4)); // eccentric starts ~40% into rep
-  const zhNums=['一','二','三','四','五','六','七','八','九','十','十一','十二','十三','十四','十五'];
+  const hold=reps*CHEST_CUE_LEN;
   if(n>sets){mkChestDone(sets);return;}
 
   const phi=document.getElementById('phi'),phd=document.getElementById('phd'),pht=document.getElementById('pht');
   const ring=document.getElementById('ring'),tc=document.getElementById('tc');
-  const doneEl=document.getElementById('ch-chip-done');
 
   if(phi){phi.style.display='flex';}
   if(phd){phd.classList.remove('rest');}
   if(pht){pht.textContent=`第 ${n}／${sets} 組 — ${hold}秒`;}
   if(n===Math.ceil(sets/2))spk(ex.vc.m);
 
-  // Announce first rep immediately
-  setTimeout(()=>spk('一，推出'),300);
-
   let t=hold;
   if(tc)tc.textContent=t;
   if(ring)ring.style.strokeDashoffset=0;
 
+  let elapsed=0,lastCueIdx=-1;
   chtmr=setInterval(()=>{
     if(mode!=='chest'){clearInterval(chtmr);chtmr=null;return;}
-    t--;
-    const elapsed=hold-t;
-    const secInRep=elapsed%repDur;
-    const repIdx=Math.floor(elapsed/repDur);
+    t--;elapsed++;
     const el=document.getElementById('tc');
     const rg=document.getElementById('ring');
     if(el)el.textContent=t;
     if(rg)rg.style.strokeDashoffset=(C42*(1-t/hold));
-    // Voice: start of each new rep → count number + push cue
-    if(secInRep===0&&repIdx>0&&repIdx<reps){
-      spk((zhNums[repIdx]||String(repIdx+1))+'，推出');
-    }
-    // Voice: eccentric phase within each rep → lower cue
-    if(secInRep===ecSec&&repDur>=3){
-      spk('放下');
+    // 每秒念一個口令字/數字：抬起-123 → 停止-12345 → 放下-123，循環到次數用完
+    const cueIdx=(elapsed-1)%CHEST_CUE_LEN;
+    if(cueIdx!==lastCueIdx){
+      lastCueIdx=cueIdx;
+      spk(CHEST_CUE[cueIdx]);
+      const pht2=document.getElementById('pht');
+      if(pht2)pht2.textContent=`第 ${n}／${sets} 組 － ${chestCuePhase(cueIdx)}`;
     }
     if(t<=0){
       clearInterval(chtmr);chtmr=null;
