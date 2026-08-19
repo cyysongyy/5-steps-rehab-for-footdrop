@@ -66,6 +66,23 @@ body{
 
 /* ── 首頁（科幻機能風） ── */
 .home{
+  /* 白天（預設）：沿用一般清爽淺色主題 */
+  --neon:var(--teal);
+  --neon-d:var(--td);
+  --neon-glow:0 2px 8px rgba(0,0,0,.1);
+  --metal:var(--bg);
+  --metal-br:var(--br);
+  --dark2:var(--bg);
+  --dtx:var(--tx);
+  --dtx2:var(--tx2);
+  --sel-tx:#fff;
+  --sel-badge-bg:#fff;
+  --sel-badge-tx:var(--teal);
+  --cta-shadow:0 2px 8px rgba(0,0,0,.15);
+  display:flex;flex-direction:column;gap:.65rem;
+}
+body.dark-mode .home{
+  /* 黑夜：深色科幻機能風 */
   --neon:#39ff8c;
   --neon-d:#1fae62;
   --neon-glow:0 0 10px rgba(57,255,140,.55),0 0 26px rgba(57,255,140,.25);
@@ -75,7 +92,10 @@ body{
   --dark2:#14171c;
   --dtx:#eef1f0;
   --dtx2:#9aa3a0;
-  display:flex;flex-direction:column;gap:.65rem;
+  --sel-tx:#06180d;
+  --sel-badge-bg:#06180d;
+  --sel-badge-tx:#39ff8c;
+  --cta-shadow:0 0 10px rgba(255,70,70,.55),0 0 26px rgba(255,70,70,.25);
   background:
     repeating-linear-gradient(115deg,rgba(255,255,255,.025) 0 2px,transparent 2px 5px),
     radial-gradient(circle at 15% 0%,rgba(57,255,140,.10),transparent 55%),
@@ -96,10 +116,12 @@ body{
 .home-hdr::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;
   background:linear-gradient(90deg,transparent,var(--neon),transparent);
   box-shadow:var(--neon-glow)}
-.home-hdr h1{font-size:20px;font-weight:700;color:var(--dtx);letter-spacing:-.3px;text-shadow:0 0 14px rgba(57,255,140,.35)}
+.home-hdr h1{font-size:20px;font-weight:700;color:var(--dtx);letter-spacing:-.3px}
+body.dark-mode .home-hdr h1{text-shadow:0 0 14px rgba(57,255,140,.35)}
 .home-hdr p{font-size:13px;color:var(--dtx2);margin-top:5px}
 .home .info-btn{background:var(--metal);border:1px solid var(--metal-br);color:var(--dtx2)}
-.home .info-btn:active{background:#20242a}
+.home .info-btn:active{background:var(--bg2)}
+body.dark-mode .home .info-btn:active{background:#20242a}
 
 /* 首頁卡片：手機單欄，大螢幕雙欄 */
 .mode-cards{display:flex;flex-direction:column;gap:.65rem}
@@ -132,8 +154,8 @@ body{
   display:flex;align-items:center;justify-content:center;
   font-size:26px;
   flex-shrink:0;
-  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 2px 8px rgba(0,0,0,.4);
 }
+body.dark-mode .mode-icon{box-shadow:0 0 0 1px rgba(255,255,255,.08),0 2px 8px rgba(0,0,0,.4)}
 .mode-icon.green{background:var(--tl);color:var(--td)}
 .mode-icon.blue{background:var(--warm1l);color:var(--warm1d)}
 .mode-text{flex:1}
@@ -793,11 +815,11 @@ function comboBoxHTML(){
   const chips=Object.entries(COMBO_META).map(([key,m])=>{
     const pos=comboQueue.indexOf(key);
     const sel=pos>=0;
-    return `<div onclick="comboToggle('${key}')" style="cursor:pointer;padding:8px 12px;border-radius:20px;border:1.5px solid ${sel?'var(--neon)':'var(--metal-br)'};background:${sel?'var(--neon)':'var(--metal)'};color:${sel?'#06180d':'var(--dtx)'};font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .2s;${sel?'box-shadow:var(--neon-glow)':''}">${sel?`<span style="background:#06180d;color:var(--neon);border-radius:50%;width:18px;height:18px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">${pos+1}</span>`:`<span style="opacity:.55;font-size:11px">${m.num}</span>`}${m.label}</div>`;
+    return `<div onclick="comboToggle('${key}')" style="cursor:pointer;padding:8px 12px;border-radius:20px;border:1.5px solid ${sel?'var(--neon)':'var(--metal-br)'};background:${sel?'var(--neon)':'var(--metal)'};color:${sel?'var(--sel-tx)':'var(--dtx)'};font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .2s;${sel?'box-shadow:var(--neon-glow)':''}">${sel?`<span style="background:var(--sel-badge-bg);color:var(--sel-badge-tx);border-radius:50%;width:18px;height:18px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">${pos+1}</span>`:`<span style="opacity:.55;font-size:11px">${m.num}</span>`}${m.label}</div>`;
   }).join('');
   const summary=comboQueue.length>0?`<div style="font-size:12.5px;color:var(--dtx2);margin:2px 0 10px">已選順序：${comboQueue.map(k=>COMBO_META[k].label).join(' → ')}</div>`:'';
   const savedHTML=(comboSaved&&comboSaved.length>0)?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-    <div onclick="comboUseSaved()" style="cursor:pointer;flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#caa23a,#8a6a12);color:#fff8e6;border:1px solid #ffd873;box-shadow:0 0 10px rgba(255,216,115,.5),0 0 26px rgba(255,216,115,.22);border-radius:10px;padding:10px 12px">
+    <div onclick="comboUseSaved()" style="cursor:pointer;flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#caa23a,#8a6a12);color:#fff8e6;border:1px solid #ffd873;box-shadow:${darkMode?'0 0 10px rgba(255,216,115,.5),0 0 26px rgba(255,216,115,.22)':'0 2px 8px rgba(0,0,0,.15)'};border-radius:10px;padding:10px 12px">
       <i class="ti ti-star" style="font-size:18px;flex-shrink:0"></i>
       <div style="flex:1;min-width:0">
         <div style="font-size:11.5px;opacity:.9">常用套餐・一鍵開始</div>
@@ -823,7 +845,7 @@ function comboBoxHTML(){
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">${chips}</div>
   ${summary}
   <div style="display:flex;gap:8px">
-    <button onclick="comboStart()" ${comboQueue.length===0?'disabled':''} style="flex:1;background:linear-gradient(135deg,#ff5b5b,#c81f2c);color:#fff;border:1px solid #ff8a8a;box-shadow:0 0 10px rgba(255,70,70,.55),0 0 26px rgba(255,70,70,.25);border-radius:10px;padding:10px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;opacity:${comboQueue.length===0?'.5':'1'}"><i class="ti ti-player-play"></i> 開始套餐（${comboQueue.length}項）</button>
+    <button onclick="comboStart()" ${comboQueue.length===0?'disabled':''} style="flex:1;background:linear-gradient(135deg,#ff5b5b,#c81f2c);color:#fff;border:1px solid #ff8a8a;box-shadow:var(--cta-shadow);border-radius:10px;padding:10px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;opacity:${comboQueue.length===0?'.5':'1'}"><i class="ti ti-player-play"></i> 開始套餐（${comboQueue.length}項）</button>
     <button onclick="comboSaveCurrent()" ${comboQueue.length===0?'disabled':''} title="把目前選擇設為常用套餐" style="flex-shrink:0;background:var(--metal);border:1.5px solid #caa23a;border-radius:10px;padding:10px 14px;font-size:15px;color:#ffd873;cursor:pointer;font-family:inherit;opacity:${comboQueue.length===0?'.5':'1'}"><i class="ti ti-star"></i></button>
     <button onclick="comboClear()" style="background:var(--metal);border:1.5px solid var(--metal-br);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--dtx2);cursor:pointer;font-family:inherit">清空</button>
   </div>
