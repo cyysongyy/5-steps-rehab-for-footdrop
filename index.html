@@ -33,7 +33,20 @@ body.dark-mode{
   --br:#343a41;--br2:#454b53;
   --shadow:0 2px 10px rgba(0,0,0,.5);
 }
-.hdr-icon-row{position:absolute;top:14px;right:14px;display:flex;gap:8px;z-index:2}
+.hdr-icon-row{position:absolute;top:14px;right:14px;display:flex;align-items:flex-start;gap:8px;z-index:2}
+.sit-widget{display:flex;flex-direction:column;align-items:center;gap:4px}
+.sit-min-adjust{
+  display:flex;align-items:center;gap:2px;
+  background:var(--metal,#2a2e34);border:1px solid var(--metal-br,#4c525c);
+  border-radius:20px;padding:2px 3px;
+}
+.sit-min-adjust button{
+  width:16px;height:16px;border-radius:50%;border:none;background:transparent;
+  color:var(--dtx,#eef1f0);font-size:11px;font-weight:700;line-height:1;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.sit-min-adjust span{font-size:10px;font-weight:700;color:var(--dtx2,#9aa3a0);min-width:18px;text-align:center}
 .theme-toggle{
   width:40px;height:40px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -863,9 +876,16 @@ function homeHTML(){
   return `<div class="home">
   <div class="home-hdr">
     <div class="hdr-icon-row">
-      <button class="theme-toggle" onclick="startWithShortcut()" title="久坐提醒（透過 iPhone 捷徑啟動，目前設定 ${sitMin} 分鐘）">
-        <i class="ti ti-bell"></i>
-      </button>
+      <div class="sit-widget">
+        <button class="theme-toggle" onclick="startWithShortcut()" title="久坐提醒（透過 iPhone 捷徑啟動，目前設定 ${sitMin} 分鐘）">
+          <i class="ti ti-bell"></i>
+        </button>
+        <div class="sit-min-adjust">
+          <button onclick="event.stopPropagation();adjSitMin(-5)" title="減少 5 分鐘">−</button>
+          <span id="sit-min-val">${sitMin}</span>
+          <button onclick="event.stopPropagation();adjSitMin(5)" title="增加 5 分鐘">＋</button>
+        </div>
+      </div>
       <button class="theme-toggle" onclick="toggleDarkMode()" title="切換白天／黑夜模式">
         <i class="ti ${darkMode?'ti-moon':'ti-sun'}"></i>
       </button>
@@ -1737,6 +1757,13 @@ function startWithShortcut() {
   if (hint) { hint.style.display = 'block'; setTimeout(() => hint.style.display = 'none', 6000); }
   // Launch shortcut with current sitMin as input
   window.location.href = 'shortcuts://run-shortcut?name=%E4%B9%85%E5%9D%90%E6%8F%90%E9%86%92&input=text&text=' + sitMin;
+}
+
+function adjSitMin(delta) {
+  sitMin = Math.max(5, Math.min(120, sitMin + delta));
+  try { localStorage.setItem('sitMin', sitMin); } catch(e) {}
+  const el = document.getElementById('sit-min-val');
+  if (el) el.textContent = sitMin;
 }
 
 render();
