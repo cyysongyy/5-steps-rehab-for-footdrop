@@ -26,15 +26,15 @@
   --prop:#3949ab;--propl:#e8eaf6;--propd:#1a237e;
 }
 
-/* ── 黑夜模式（套用於訓練頁面，首頁維持固定深色風格不受影響） ── */
+/* ── 黑夜模式（訓練頁面與首頁共用，隨切換鈕變化） ── */
 body.dark-mode{
   --bg:#1b1e22;--bg2:#22262b;--bg3:#15171a;
   --tx:#eef1f0;--tx2:#a7afac;--tx3:#7c847f;
   --br:#343a41;--br2:#454b53;
   --shadow:0 2px 10px rgba(0,0,0,.5);
 }
+.hdr-icon-row{position:absolute;top:14px;right:14px;display:flex;gap:8px;z-index:2}
 .theme-toggle{
-  position:absolute;top:14px;right:14px;
   width:40px;height:40px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   background:var(--metal,#2a2e34);border:1px solid var(--metal-br,#4c525c);
@@ -355,7 +355,13 @@ body.dark-mode .mode-icon{box-shadow:0 0 0 1px rgba(255,255,255,.08),0 2px 8px r
 .warm-progress div{flex:1;height:3px;border-radius:2px;background:var(--br);transition:background .4s}
 
 /* Sitting timer */
-.sit-timer-card{background:var(--metal,var(--bg));border-radius:var(--ra);border:2px solid var(--amb);padding:16px;color:var(--dtx,var(--tx))}
+.sit-hint-bubble{
+  position:absolute;top:58px;right:14px;z-index:3;max-width:230px;
+  font-size:11px;line-height:1.6;text-align:left;
+  background:var(--metal,var(--bg));border:1px solid var(--amb);
+  color:var(--dtx,var(--tx));border-radius:10px;padding:10px 12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+}
 
 /* ── Band module ── */
 .band-phase-tag{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin:10px 0 8px}
@@ -856,9 +862,18 @@ function comboBoxHTML(){
 function homeHTML(){
   return `<div class="home">
   <div class="home-hdr">
-    <button class="theme-toggle" onclick="toggleDarkMode()" title="切換訓練頁面的白天／黑夜模式">
-      <i class="ti ${darkMode?'ti-moon':'ti-sun'}"></i>
-    </button>
+    <div class="hdr-icon-row">
+      <button class="theme-toggle" onclick="startWithShortcut()" title="久坐提醒（透過 iPhone 捷徑啟動，目前設定 ${sitMin} 分鐘）">
+        <i class="ti ti-bell"></i>
+      </button>
+      <button class="theme-toggle" onclick="toggleDarkMode()" title="切換白天／黑夜模式">
+        <i class="ti ${darkMode?'ti-moon':'ti-sun'}"></i>
+      </button>
+    </div>
+    <div id="sit-shortcut-hint" class="sit-hint-bubble" style="display:none">
+      <strong style="color:var(--amd)">首次使用需設定一次捷徑：</strong><br>
+      捷徑 App → ＋新增 → 搜尋「計時器」→「啟動計時器」→ 輸入來源選「<strong>捷徑輸入</strong>」→ 命名為「<strong>久坐提醒</strong>」→ 儲存
+    </div>
     <h1>🏃 復健暖身訓練</h1>
     <p>選擇今天的訓練項目</p>
     <button class="info-btn" onclick="openInfoModal()">
@@ -976,7 +991,6 @@ function homeHTML(){
       </div>
       <i class="ti ti-external-link" style="font-size:16px;color:#764ba2;flex-shrink:0;margin-left:auto"></i>
     </a>
-    ${sitCardHTML()}
 </div>`;
 }
 
@@ -1714,165 +1728,18 @@ function finishAll(){
 </div>`;
 }
 
-// ── 久坐計時器 (localStorage 持久化) ──
+// ── 久坐提醒 (透過 iPhone 捷徑啟動計時) ──
 let sitMin = parseInt(localStorage.getItem('sitMin')||'30');
-let sitTmr = null;
-let sitEnd = parseInt(localStorage.getItem('sitEnd')||'0') || null;
-// Restore timer if it was running before page reload
-if (sitEnd && sitEnd > Date.now()) {
-  // Will be started after render() via initSitTimer()
-} else if (sitEnd) {
-  sitEnd = null;
-  localStorage.removeItem('sitEnd');
-}
-
-function sitFmt(ms) {
-  const m = Math.floor(ms/60000), s = Math.floor((ms%60000)/1000);
-  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-}
-
-function sitCardHTML() {
-  const running = sitEnd && sitEnd > Date.now();
-  const expired = sitEnd && sitEnd <= Date.now();
-  const rem = running ? sitEnd - Date.now() : 0;
-  const borderColor = expired ? 'var(--red)' : 'var(--amb)';
-  return `<div class="sit-timer-card" id="sit-card" style="border-color:${borderColor}">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <div style="width:36px;height:36px;border-radius:50%;background:var(--al);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <i class="ti ti-clock" style="font-size:18px;color:var(--amd)"></i>
-      </div>
-      <div style="flex:1">
-        <div style="font-size:15px;font-weight:700;color:var(--dtx,var(--tx))">久坐提醒</div>
-        <div style="font-size:12px;color:var(--dtx2,var(--tx2))">坐下時啟動，時間到提醒起身復健</div>
-      </div>
-    </div>
-    <div style="display:${running||expired?'none':'flex'};align-items:center;gap:10px;margin-bottom:10px" id="sit-setup">
-      <div style="display:flex;align-items:center;gap:6px;flex:1">
-        <button onclick="adjSit(-5)" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--amb);background:transparent;cursor:pointer;font-size:18px;font-weight:700;color:var(--amb)">−</button>
-        <span id="sit-min" style="font-size:22px;font-weight:700;color:var(--dtx,var(--tx));min-width:44px;text-align:center">${sitMin}</span>
-        <span style="font-size:13px;color:var(--dtx2,var(--tx2))">分鐘</span>
-        <button onclick="adjSit(5)" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--amb);background:transparent;cursor:pointer;font-size:18px;font-weight:700;color:var(--amb)">＋</button>
-      </div>
-      <button onclick="startSitTimer()" style="background:var(--amb);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">開始計時</button>
-      <button onclick="startWithShortcut()" style="background:transparent;border:1.5px solid var(--amb);color:var(--amd);border-radius:10px;padding:10px 12px;font-size:13px;cursor:pointer;font-family:inherit" title="透過 iPhone 捷徑啟動，省電模式也會響">🔔 iPhone</button>
-    </div>
-    <div id="sit-shortcut-hint" style="display:none;font-size:11px;color:var(--dtx2,var(--tx2));margin-top:8px;background:var(--dark2,var(--bg));border-radius:8px;padding:8px 10px;line-height:1.6">
-      <strong style="color:var(--amd)">首次使用需設定一次捷徑：</strong><br>
-      捷徑 App → ＋新增 → 搜尋「計時器」→「啟動計時器」→ 輸入來源選「<strong>捷徑輸入</strong>」→ 命名為「<strong>久坐提醒</strong>」→ 儲存
-    </div>
-    <div style="display:${running||expired?'flex':'none'};align-items:center;gap:10px" id="sit-running">
-      <div style="flex:1">
-        <div style="font-size:12px;color:var(--dtx2,var(--tx2));margin-bottom:2px">${expired?'時間到！':'距離提醒'}</div>
-        <div id="sit-countdown" style="font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:${expired?'var(--red)':'var(--amd)'}">${expired?'起身！':sitFmt(rem)}</div>
-      </div>
-      <button onclick="stopSitTimer()" style="background:transparent;border:1.5px solid var(--metal-br,var(--br));border-radius:10px;padding:10px 16px;font-size:13px;color:var(--dtx2,var(--tx2));cursor:pointer;font-family:inherit">停止</button>
-      <button onclick="setMode('lumbar')" style="background:var(--amd);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">立即復健</button>
-    </div>
-  </div>`;
-}
 
 function startWithShortcut() {
-  // Show setup hint for 4 seconds on first tap
+  // Show setup hint for first-time users
   const hint = document.getElementById('sit-shortcut-hint');
   if (hint) { hint.style.display = 'block'; setTimeout(() => hint.style.display = 'none', 6000); }
   // Launch shortcut with current sitMin as input
   window.location.href = 'shortcuts://run-shortcut?name=%E4%B9%85%E5%9D%90%E6%8F%90%E9%86%92&input=text&text=' + sitMin;
 }
 
-function adjSit(delta) {
-  sitMin = Math.max(5, Math.min(120, sitMin + delta));
-  localStorage.setItem('sitMin', sitMin);
-  const el = document.getElementById('sit-min');
-  if (el) el.textContent = sitMin;
-}
-
-function startSitTimer() {
-  sitEnd = Date.now() + sitMin * 60 * 1000;
-  localStorage.setItem('sitEnd', sitEnd);
-  render(); // re-render home to show running state
-  initSitTimer();
-}
-
-function initSitTimer() {
-  if (!sitEnd || sitTmr) return;
-  if (sitEnd <= Date.now()) { sitAlarm(); return; }
-  sitTmr = setInterval(() => {
-    const rem = Math.max(0, sitEnd - Date.now());
-    const cd = document.getElementById('sit-countdown');
-    if (cd) cd.textContent = sitFmt(rem);
-    if (rem <= 0) { clearInterval(sitTmr); sitTmr = null; sitAlarm(); }
-  }, 500);
-}
-
-function sitBeep() {
-  try {
-    const ac = new (window.AudioContext || window.webkitAudioContext)();
-    const beep = (freq, start, dur) => {
-      const o = ac.createOscillator();
-      const g = ac.createGain();
-      o.connect(g); g.connect(ac.destination);
-      o.frequency.value = freq;
-      o.type = 'sine';
-      g.gain.setValueAtTime(0.6, ac.currentTime + start);
-      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + start + dur);
-      o.start(ac.currentTime + start);
-      o.stop(ac.currentTime + start + dur + 0.05);
-    };
-    beep(880, 0,    0.18);
-    beep(880, 0.22, 0.18);
-    beep(880, 0.44, 0.18);
-    beep(1100, 0.7, 0.35);
-  } catch(e) {}
-}
-function sitAlarm() {
-  localStorage.removeItem('sitEnd');
-  sitEnd = Date.now(); // mark as expired
-  if (sitTmr) { clearInterval(sitTmr); sitTmr = null; }
-  // Show full-screen overlay (works even if audio is blocked)
-  const ov = document.getElementById('sit-alarm-overlay');
-  if (ov) { ov.style.display = 'flex'; }
-  // Try audio immediately (works if page is active/foreground)
-  sitBeep();
-  spk('久坐時間到！請起身活動，進行腰椎復健！');
-  render();
-}
-
-function dismissSitAlarm() {
-  const ov = document.getElementById('sit-alarm-overlay');
-  if (ov) { ov.style.display = 'none'; }
-  // Play sound on user tap (bypasses iOS audio restriction)
-  sitBeep();
-  spk('好，請起身活動！');
-}
-
-function stopSitTimer() {
-  if (sitTmr) { clearInterval(sitTmr); sitTmr = null; }
-  sitEnd = null;
-  localStorage.removeItem('sitEnd');
-  render();
-}
-
-// ── iOS 省電模式 / 螢幕鎖定復原 ──
-document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState!=='visible')return;
-  // Check if timer expired while page was hidden/frozen
-  if(sitEnd && sitEnd - Date.now() <= 0) {
-    sitAlarm(); // show overlay immediately on return
-  } else if(sitEnd && sitEnd > Date.now() && !sitTmr) {
-    initSitTimer(); // resume countdown
-  }
-});
-
-// Also check on any touch (catches cases where visibilitychange missed)
-document.addEventListener('touchstart', () => {
-  if(sitEnd && sitEnd - Date.now() <= 0 && sitTmr === null) {
-    const ov = document.getElementById('sit-alarm-overlay');
-    if (ov && ov.style.display !== 'flex') sitAlarm();
-  }
-}, { passive: true });
-
 render();
-initSitTimer(); // restore sitting timer if was running
 
 
 
@@ -3813,21 +3680,6 @@ function closeInfoModal(e){
 }
 
 </script>
-
-<!-- ── iOS 久坐提醒全螢幕警示 ── -->
-<div id="sit-alarm-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#cc000088;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px"
-  onclick="dismissSitAlarm()">
-  <div style="font-size:72px;animation:alarm-pulse 0.6s ease-in-out infinite alternate">⏰</div>
-  <div style="font-size:28px;font-weight:800;color:#fff;margin:16px 0 8px;text-shadow:0 2px 8px #0008">久坐提醒！</div>
-  <div style="font-size:16px;color:#ffe0e0;margin-bottom:32px;line-height:1.6">請起身活動<br>進行腰椎復健</div>
-  <button onclick="dismissSitAlarm()" style="background:#fff;color:#cc0000;border:none;border-radius:50px;padding:16px 40px;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 4px 20px #0004">
-    好，我知道了 ✓
-  </button>
-</div>
-<style>
-@keyframes alarm-pulse{from{transform:scale(1) rotate(-10deg)}to{transform:scale(1.2) rotate(10deg)}}
-</style>
-
 
 <!-- ── 說明 & 免責聲明 Modal ── -->
 <div class="modal-overlay" id="info-modal" onclick="closeInfoModal(event)">
