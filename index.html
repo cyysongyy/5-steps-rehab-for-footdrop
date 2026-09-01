@@ -3721,36 +3721,49 @@ const FOOT_IMGS={
 //  腳掌靈活訓練模組
 // ══════════════════════════════
 const FTC='#0891b2',FTL='#e0f7fa',FTD='#0e5b68';
+// 每個動作的口語口令：動作A(123)→停頓(12345)→動作B(123)，每字/數字各念1秒，循環播放
 const FOOT_EX=[
   {id:'f1',title:'腳踝上下活動',badge:'10~15次・熱身',icon:'ti-arrows-vertical',
    desc:'坐穩，腳尖慢慢往上勾，回到中間，再慢慢往下壓，回到中間，重複進行。',
    tip:'動作放慢，保持呼吸自然不憋氣，感受腳踝上下活動的完整範圍。',
-   vc:{s:'腳踝上下活動開始，腳尖慢慢往上勾',m:'回到中間，再慢慢往下壓',e:'腳踝上下活動完成，做得很好'},
+   vc:{s:'腳踝上下活動開始，跟著口令慢慢做',e:'腳踝上下活動完成，做得很好'},
+   cue:['往上勾','一','二','三','停止','一','二','三','四','五','往下壓','一','二','三'],
+   phase:['往上勾','停止','往下壓'],
    dur:60,reps:12},
   {id:'f2',title:'左右活動：腳掌左右倒',badge:'左右各10~15次・2~3組',icon:'ti-arrows-horizontal',
    desc:'腳跟保持貼地，只讓前腳掌慢慢向左倒，回到中間，再慢慢向右倒，回到中間。',
    tip:'腳跟保持貼地，只讓前腳掌左右倒，慢慢控制，不要用整條腿帶動。',
-   vc:{s:'腳掌左右倒開始，腳跟貼地，前腳掌慢慢向左倒',m:'回到中間，再慢慢向右倒',e:'左右活動完成，做得很好'},
+   vc:{s:'腳掌左右倒開始，跟著口令慢慢做',e:'左右活動完成，做得很好'},
+   cue:['向左倒','一','二','三','回中','一','二','三','四','五','向右倒','一','二','三'],
+   phase:['向左倒','回中','向右倒'],
    dur:120,reps:12},
   {id:'f3',title:'彈力帶內翻／外翻',badge:'每個方向10次・2組',icon:'ti-refresh',
    desc:'套上彈力帶，腳掌向外打開為外翻，回到中間，再向內收回為內翻，回到中間，重複進行。',
    tip:'力量來自腳踝本身，動作放慢，避免用膝蓋或髖部代償。',
-   vc:{s:'彈力帶內外翻開始，腳掌慢慢向外打開',m:'回到中間，再慢慢向內收回',e:'內外翻訓練完成，做得很好'},
+   vc:{s:'彈力帶內外翻開始，跟著口令慢慢做',e:'內外翻訓練完成，做得很好'},
+   cue:['外翻','一','二','三','回中','一','二','三','四','五','內翻','一','二','三'],
+   phase:['外翻','回中','內翻'],
    dur:120,reps:10},
   {id:'f4',title:'腳踝控制：前腳掌左右滑',badge:'左右各10~15次・2~3組',icon:'ti-arrows-horizontal',
    desc:'腳跟固定不動，前腳掌像扇子一樣慢慢向左滑，回到中間，再向右滑，幅度從小到大。',
    tip:'腳跟固定不動，前腳掌像扇子一樣左右滑動，幅度從小到大。',
-   vc:{s:'腳踝控制開始，腳跟固定，前腳掌慢慢向左滑',m:'回到中間，再慢慢向右滑',e:'腳踝控制完成，做得很好'},
+   vc:{s:'腳踝控制開始，跟著口令慢慢做',e:'腳踝控制完成，做得很好'},
+   cue:['向左滑','一','二','三','回中間','一','二','三','四','五','向右滑','一','二','三'],
+   phase:['向左滑','回中間','向右滑'],
    dur:120,reps:12},
   {id:'f5',title:'進階：腳掌畫小圓',badge:'順逆時針各10圈',icon:'ti-rotate',
    desc:'腳掌稍微離地，用腳尖畫小圓，先順時針方向，再換逆時針方向。',
    tip:'腳掌只要離地一點點，用腳尖畫小圓，順時針與逆時針各做一輪。',
-   vc:{s:'腳掌畫小圓開始，腳掌稍微離地，順時針慢慢畫圈',m:'換逆時針方向，繼續慢慢畫小圓',e:'腳掌畫小圓完成，做得很好'},
+   vc:{s:'腳掌畫小圓開始，跟著口令慢慢做',e:'腳掌畫小圓完成，做得很好'},
+   cue:['順時針','一','二','三','停止','一','二','三','四','五','逆時針','一','二','三'],
+   phase:['順時針','停止','逆時針'],
    dur:60,reps:10},
   {id:'f6',title:'油門↔煞車模擬',badge:'重複10~20次',icon:'ti-steering-wheel',
    desc:'腳跟盡量貼地或固定，利用腳踝與前腳掌左右移動：從油門位置到中間，到煞車位置，再回中間、回油門位置。',
    tip:'慢慢、準確、不急；未來實際開車前，請先在熄火靜止的車內練習，確定安全再上路。',
-   vc:{s:'油門煞車模擬開始，腳跟固定，從油門位置慢慢移到中間',m:'繼續移到煞車位置，再慢慢移回中間',e:'油門煞車模擬完成，今天的腳掌靈活訓練全部做完了！'},
+   vc:{s:'油門煞車模擬開始，跟著口令慢慢做',e:'油門煞車模擬完成，今天的腳掌靈活訓練全部做完了！'},
+   cue:['油門','一','二','三','中間','一','二','三','四','五','煞車','一','二','三'],
+   phase:['油門','中間','煞車'],
    dur:180,reps:15}
 ];
 let footCur=0,footS={},footTmr=null,customFoot={};
@@ -3924,6 +3937,9 @@ function startFoot(){
   setTimeout(()=>{if(mode==='foot')runFoot(getFootVal(ex.id,'dur'));},1500);
 }
 
+function footCuePhase(ex,cueIdx){
+  return(cueIdx<4?ex.phase[0]:cueIdx<10?ex.phase[1]:ex.phase[2])+'中';
+}
 function runFoot(totalSec){
   const ex=FOOT_EX[footCur];
   let left=totalSec;
@@ -3933,13 +3949,21 @@ function runFoot(totalSec){
   const pht=document.getElementById('ftpht');
   if(phi)phi.style.display='flex';
   if(pht)pht.textContent='進行中';
-  const mid=Math.floor(totalSec/2);
+  const cueLen=ex.cue.length;
+  let elapsed=0,lastCueIdx=-1;
   footTmr=setInterval(()=>{
     if(mode!=='foot'){clearInterval(footTmr);footTmr=null;return;}
-    left--;
+    left--;elapsed++;
     if(tc)tc.textContent=left;
     if(ring){const pct=left/totalSec;ring.style.strokeDashoffset=C42*pct;}
-    if(left===mid)spk(ex.vc.m);
+    // 每秒念一個口令字/數字，循環到時間結束
+    const cueIdx=(elapsed-1)%cueLen;
+    if(cueIdx!==lastCueIdx){
+      lastCueIdx=cueIdx;
+      spk(ex.cue[cueIdx]);
+      const pht2=document.getElementById('ftpht');
+      if(pht2)pht2.textContent=footCuePhase(ex,cueIdx);
+    }
     if(left<=0){
       clearInterval(footTmr);footTmr=null;
       footS[ex.id]=1;
