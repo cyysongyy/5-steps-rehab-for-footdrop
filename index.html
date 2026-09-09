@@ -607,6 +607,14 @@ const COMBO_META={
   prop:{label:'本體覺訓練',num:10},
   foot:{label:'腳掌靈活訓練',num:11}
 };
+// 各模組預估所需分鐘數（對應首頁模組卡片上的時間標示），用於套餐總計時間估算
+const COMBO_EST_MIN={
+  warm:4, rehab:5, lumbar:5, bedlumbar:7, chest:10, band:10,
+  glute:5, footlift:1, gait:2, prop:10, foot:10
+};
+function comboEstMin(keys){
+  return(keys||[]).reduce((a,k)=>a+(COMBO_EST_MIN[k]||0),0);
+}
 // 各模組的「開始」函式名稱，套餐模式下會自動呼叫，不需使用者手動按開始
 const COMBO_STARTERS={
   warm:'startWarm', rehab:'startEx', lumbar:'startLumbar', bedlumbar:'startBedLumbar',
@@ -848,6 +856,7 @@ function comboBoxHTML(){
         <div style="font-size:11.5px;opacity:.9">手動套餐・一鍵開始</div>
         <div style="font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${comboSaved.map(k=>COMBO_META[k]?.label||k).join(' → ')}</div>
       </div>
+      <span style="flex-shrink:0;background:rgba(0,0,0,.18);color:#fff8e6;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap">約${comboEstMin(comboSaved)}分</span>
       <i class="ti ti-player-play" style="font-size:16px;flex-shrink:0"></i>
     </div>
     <button onclick="comboClearSaved()" title="清除手動套餐" style="flex-shrink:0;width:38px;height:38px;border-radius:10px;background:var(--metal);border:1.5px solid var(--metal-br);color:var(--dtx2);cursor:pointer;font-size:15px"><i class="ti ti-x"></i></button>
