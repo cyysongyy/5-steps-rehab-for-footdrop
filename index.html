@@ -3792,8 +3792,15 @@ const FOOT_EX=[
    vc:{s:'油門煞車模擬開始，跟著口令慢慢做',e:'油門煞車模擬完成，今天的腳掌靈活訓練全部做完了！'},
    cue:['油門','一','二','三','中間','一','二','三','四','五','煞車','一','二','三'],
    phase:['油門','中間','煞車'],
-   dur:180,reps:15}
+   dur:180,reps:15,hasRandom:true}
 ];
+let footRandomOn=false;
+function toggleFootRandom(){
+  footRandomOn=!footRandomOn;
+  if(footTmr){clearInterval(footTmr);footTmr=null;}
+  footS[FOOT_EX[footCur].id]=0;
+  render();
+}
 let footCur=0,footS={},footTmr=null,customFoot={};
 
 function getFootVal(id,key){
@@ -3883,6 +3890,12 @@ ${footStepRow()}
       <div class="warm-steps">${ex.desc.split('。').filter(s=>s.trim()).map(s=>`<div class="warm-step">${s}。</div>`).join('')}</div>
     </div>
     <div class="warm-tip" style="color:${FTD};background:${FTL}"><i class="ti ti-bulb" style="color:${FTC}"></i><span>${ex.tip}</span></div>
+    ${ex.hasRandom?`<div class="vrow" style="margin-bottom:8px">
+      <i class="ti ti-arrows-shuffle" style="font-size:15px;color:${FTC}"></i>
+      <span class="vlbl">隨機口令模式（訓練臨機應變）</span>
+      <span class="vst" style="color:${FTC}">${footRandomOn?'開啟':'關閉'}</span>
+      <button class="tgl ${footRandomOn?'':'off'}" onclick="toggleFootRandom()" style="background:${footRandomOn?FTC:'#ccc'}"></button>
+    </div>`:''}
     <div class="tip"><i class="ti ti-adjustments-horizontal" style="font-size:14px;color:${FTC}"></i><span>點 <strong>＋ / −</strong> 可調整時間與次數${done?'（重置後生效）':''}</span></div>
     <div class="chips">
       ${footDurChipHTML(ex.id,dur,ftmod)}
@@ -3968,8 +3981,22 @@ function startFoot(){
 function footCuePhase(ex,cueIdx){
   return(cueIdx<4?ex.phase[0]:cueIdx<10?ex.phase[1]:ex.phase[2])+'中';
 }
+function finishFootStep(ex){
+  footS[ex.id]=1;
+  spk(ex.vc.e);
+  const ban=document.getElementById('ftban'),ftbgo=document.getElementById('ftbgo');
+  if(ban)ban.style.display='block';
+  if(ftbgo){ftbgo.innerHTML='<i class="ti ti-circle-check"></i> 已完成';ftbgo.style.background=FTD;ftbgo.disabled=true;}
+  const phi=document.getElementById('ftphi');if(phi)phi.style.display='none';
+  const tc=document.getElementById('fttc');if(tc)tc.textContent='✓';
+  const sr=document.getElementById('steprow');if(sr)sr.outerHTML=footStepRow();
+  const isLast=footCur===FOOT_EX.length-1;
+  if(!isLast){ footAutoNext(footCur+1); }else if(comboActive){setTimeout(()=>{if(mode==='foot'&&comboActive)footFinish();},1500);}
+}
+
 function runFoot(totalSec){
   const ex=FOOT_EX[footCur];
+  if(ex.hasRandom&&footRandomOn){ runFootRandom(ex,totalSec); return; }
   let left=totalSec;
   const ring=document.getElementById('ftring');
   const tc=document.getElementById('fttc');
@@ -3994,16 +4021,37 @@ function runFoot(totalSec){
     }
     if(left<=0){
       clearInterval(footTmr);footTmr=null;
-      footS[ex.id]=1;
-      spk(ex.vc.e);
-      const ban=document.getElementById('ftban'),ftbgo=document.getElementById('ftbgo');
-      if(ban)ban.style.display='block';
-      if(ftbgo){ftbgo.innerHTML='<i class="ti ti-circle-check"></i> 已完成';ftbgo.style.background=FTD;ftbgo.disabled=true;}
-      if(phi)phi.style.display='none';
-      if(tc)tc.textContent='✓';
-      const sr=document.getElementById('steprow');if(sr)sr.outerHTML=footStepRow();
-      const isLast=footCur===FOOT_EX.length-1;
-      if(!isLast){ footAutoNext(footCur+1); }else if(comboActive){setTimeout(()=>{if(mode==='foot'&&comboActive)footFinish();},1500);}
+      finishFootStep(ex);
+    }
+  },1000);
+}
+
+// 隨機口令模式：不照固定順序，隨機念「油門」或「煞車」，訓練臨機應變的反應能力
+function runFootRandom(ex,totalSec){
+  let left=totalSec;
+  const ring=document.getElementById('ftring');
+  const tc=document.getElementById('fttc');
+  const phi=document.getElementById('ftphi');
+  if(phi)phi.style.display='flex';
+  const reps=getFootVal(ex.id,'reps');
+  const interval=Math.max(2,Math.round(totalSec/reps));
+  const speakRandom=()=>{
+    const word=Math.random()<0.5?'油門':'煞車';
+    spk(word+'！');
+    const pht2=document.getElementById('ftpht');
+    if(pht2)pht2.textContent=word+'中';
+  };
+  speakRandom();
+  let elapsed=0;
+  footTmr=setInterval(()=>{
+    if(mode!=='foot'){clearInterval(footTmr);footTmr=null;return;}
+    left--;elapsed++;
+    if(tc)tc.textContent=left;
+    if(ring){const pct=left/totalSec;ring.style.strokeDashoffset=C42*pct;}
+    if(left>0&&elapsed%interval===0)speakRandom();
+    if(left<=0){
+      clearInterval(footTmr);footTmr=null;
+      finishFootStep(ex);
     }
   },1000);
 }
