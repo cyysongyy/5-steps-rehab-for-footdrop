@@ -4034,7 +4034,7 @@ function runFootRandom(ex,totalSec){
   const phi=document.getElementById('ftphi');
   if(phi)phi.style.display='flex';
   const reps=getFootVal(ex.id,'reps');
-  const interval=Math.max(2,Math.round(totalSec/reps));
+  const interval=Math.min(2,Math.max(1,Math.round(totalSec/reps)));
   const speakRandom=()=>{
     const word=Math.random()<0.5?'油門':'煞車';
     spk(word+'！');
