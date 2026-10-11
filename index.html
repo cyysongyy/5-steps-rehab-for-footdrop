@@ -1539,13 +1539,13 @@ function runWarmTimer(ex){
 
       const last=wcur===WARM.length-1;
       if(!last){
-        // 自動換到下一個，10秒倒數
+        // 自動換到下一個，5秒倒數
         let cnt=10;
         if(phi)phi.style.display='flex';
         if(phd)phd.style.background='var(--amb)';
-        if(pht)pht.textContent=`10 秒後自動繼續`;
+        if(pht)pht.textContent=`5 秒後自動繼續`;
         if(ring){ring.style.stroke='var(--amb)';ring.style.strokeDashoffset='0';}
-        const waStart=Date.now(),waTotal=10;
+        const waStart=Date.now(),waTotal=5;
         wtmr=setInterval(()=>{
           const cnt=Math.max(0,waTotal-Math.round((Date.now()-waStart)/1000));
           const tx=document.getElementById('tc'),rx=document.getElementById('ring'),px=document.getElementById('pht');
@@ -2237,7 +2237,7 @@ function runLumbarPhase(phaseIdx){
       if(pht)pht.textContent=`${cnt} 秒後自動繼續`;
       if(tc2)tc2.textContent=cnt;
       if(ring){ring.style.stroke='var(--amb)';ring.style.strokeDashoffset='0';}
-      const laStart=Date.now(),laTotal=10;
+      const laStart=Date.now(),laTotal=5;
       ltmr=setInterval(()=>{
         const cnt=Math.max(0,laTotal-Math.round((Date.now()-laStart)/1000));
         const t=document.getElementById('tc'),r=document.getElementById('ring'),pt=document.getElementById('pht');
@@ -2488,7 +2488,7 @@ function runBedPhase(phaseIdx){
       const phi2=document.getElementById('bphi'),phd=document.getElementById('bphd'),
             pht=document.getElementById('bpht'),ring=document.getElementById('bring'),tc2=document.getElementById('btc');
       if(phi2)phi2.style.display='flex';if(phd)phd.style.background=BED_PURPLE;
-      const laTotal=10;
+      const laTotal=5;
       if(tc2)tc2.textContent=laTotal;if(ring){ring.style.stroke=BED_PURPLE;ring.style.strokeDashoffset='0';}
       if(pht)pht.textContent=`${laTotal} 秒後自動繼續`;
       const laStart=Date.now();
@@ -3369,15 +3369,15 @@ ${gluteStepRow()}
 let gluteAutoTmr=null,gluteAutoSec=0;
 function gluteAutoNext(nextIdx){
   if(gluteAutoTmr){clearInterval(gluteAutoTmr);gluteAutoTmr=null;}
-  gluteAutoSec=10;
-  spk('10秒後自動開始下一個動作');
+  gluteAutoSec=5;
+  spk('5秒後自動開始下一個動作');
   // 在 nav 區塊顯示倒數
   const nav=document.querySelector('.nav');
   if(nav){
     nav.innerHTML=`
       <div style="background:#e8f5e9;border-radius:12px;padding:12px;text-align:center;width:100%">
         <div style="font-size:11px;color:#388e3c;margin-bottom:2px">⏭ 自動開始下一個動作</div>
-        <div style="font-size:40px;font-weight:800;color:#2e7d32;font-family:'DM Mono',monospace;line-height:1" id="gauto-num">10</div>
+        <div style="font-size:40px;font-weight:800;color:#2e7d32;font-family:'DM Mono',monospace;line-height:1" id="gauto-num">5</div>
         <div style="font-size:11px;color:#66bb6a;margin-top:2px">${GLUTE_EX[nextIdx].title}</div>
         <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
           <button onclick="gluteStopAuto()" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
@@ -3591,14 +3591,14 @@ ${gaitStepRow()}
 let gaitAutoTmr=null,gaitAutoSec=0;
 function gaitAutoNext(nextIdx){
   if(gaitAutoTmr){clearInterval(gaitAutoTmr);gaitAutoTmr=null;}
-  gaitAutoSec=10;
-  spk('10秒後自動開始下一個動作');
+  gaitAutoSec=5;
+  spk('5秒後自動開始下一個動作');
   const nav=document.querySelector('.nav');
   if(nav){
     nav.innerHTML=`
       <div style="background:${GTL};border-radius:12px;padding:12px;text-align:center;width:100%">
         <div style="font-size:11px;color:${GTC};margin-bottom:2px">⏭ 自動開始下一個動作</div>
-        <div style="font-size:40px;font-weight:800;color:${GTD};font-family:'DM Mono',monospace;line-height:1" id="gtauto-num">10</div>
+        <div style="font-size:40px;font-weight:800;color:${GTD};font-family:'DM Mono',monospace;line-height:1" id="gtauto-num">5</div>
         <div style="font-size:11px;color:${GTC};margin-top:2px">${GAIT_EX[nextIdx].title}</div>
         <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
           <button onclick="gaitStopAuto()" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
@@ -3856,14 +3856,14 @@ ${propStepRow()}
 let propAutoTmr=null,propAutoSec=0;
 function propAutoNext(nextIdx){
   if(propAutoTmr){clearInterval(propAutoTmr);propAutoTmr=null;}
-  propAutoSec=10;
-  spk('10秒後自動開始下一個動作');
+  propAutoSec=5;
+  spk('5秒後自動開始下一個動作');
   const nav=document.querySelector('.nav');
   if(nav){
     nav.innerHTML=`
       <div style="background:${PPL};border-radius:12px;padding:12px;text-align:center;width:100%">
         <div style="font-size:11px;color:${PPC};margin-bottom:2px">⏭ 自動開始下一個動作</div>
-        <div style="font-size:40px;font-weight:800;color:${PPD};font-family:'DM Mono',monospace;line-height:1" id="ppauto-num">10</div>
+        <div style="font-size:40px;font-weight:800;color:${PPD};font-family:'DM Mono',monospace;line-height:1" id="ppauto-num">5</div>
         <div style="font-size:11px;color:${PPC};margin-top:2px">${PROP_EX[nextIdx].title}</div>
         <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
           <button onclick="propStopAuto()" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
@@ -4148,14 +4148,14 @@ ${footStepRow()}
 let footAutoTmr=null,footAutoSec=0;
 function footAutoNext(nextIdx){
   if(footAutoTmr){clearInterval(footAutoTmr);footAutoTmr=null;}
-  footAutoSec=10;
-  spk('10秒後自動開始下一個動作');
+  footAutoSec=5;
+  spk('5秒後自動開始下一個動作');
   const nav=document.querySelector('.nav');
   if(nav){
     nav.innerHTML=`
       <div style="background:${FTL};border-radius:12px;padding:12px;text-align:center;width:100%">
         <div style="font-size:11px;color:${FTC};margin-bottom:2px">⏭ 自動開始下一個動作</div>
-        <div style="font-size:40px;font-weight:800;color:${FTD};font-family:'DM Mono',monospace;line-height:1" id="ftauto-num">10</div>
+        <div style="font-size:40px;font-weight:800;color:${FTD};font-family:'DM Mono',monospace;line-height:1" id="ftauto-num">5</div>
         <div style="font-size:11px;color:${FTC};margin-top:2px">${FOOT_EX[nextIdx].title}</div>
         <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
           <button onclick="footStopAuto()" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
@@ -4467,14 +4467,14 @@ ${rgaitStepRow()}
 let rgaitAutoTmr=null,rgaitAutoSec=0;
 function rgaitAutoNext(nextIdx){
   if(rgaitAutoTmr){clearInterval(rgaitAutoTmr);rgaitAutoTmr=null;}
-  rgaitAutoSec=10;
-  spk('10秒後自動開始下一個動作');
+  rgaitAutoSec=5;
+  spk('5秒後自動開始下一個動作');
   const nav=document.querySelector('.nav');
   if(nav){
     nav.innerHTML=`
       <div style="background:${RGL};border-radius:12px;padding:12px;text-align:center;width:100%">
         <div style="font-size:11px;color:${RGC};margin-bottom:2px">⏭ 自動開始下一個動作</div>
-        <div style="font-size:40px;font-weight:800;color:${RGD};font-family:'DM Mono',monospace;line-height:1" id="rgauto-num">10</div>
+        <div style="font-size:40px;font-weight:800;color:${RGD};font-family:'DM Mono',monospace;line-height:1" id="rgauto-num">5</div>
         <div style="font-size:11px;color:${RGC};margin-top:2px">${RGAIT_EX[nextIdx].title}</div>
         <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
           <button onclick="rgaitStopAuto()" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
@@ -4749,14 +4749,14 @@ ${dbugStepRow()}
 let dbugAutoTmr=null,dbugAutoSec=0;
 function dbugAutoNext(nextIdx){
   if(dbugAutoTmr){clearInterval(dbugAutoTmr);dbugAutoTmr=null;}
-  dbugAutoSec=10;
-  spk('10秒後自動開始下一個動作');
+  dbugAutoSec=5;
+  spk('5秒後自動開始下一個動作');
   const nav=document.querySelector('.nav');
   if(nav){
     nav.innerHTML=`
       <div style="background:${DBL};border-radius:12px;padding:12px;text-align:center;width:100%">
         <div style="font-size:11px;color:${DBC};margin-bottom:2px">⏭ 自動開始下一個動作</div>
-        <div style="font-size:40px;font-weight:800;color:${DBD};font-family:'DM Mono',monospace;line-height:1" id="dbauto-num">10</div>
+        <div style="font-size:40px;font-weight:800;color:${DBD};font-family:'DM Mono',monospace;line-height:1" id="dbauto-num">5</div>
         <div style="font-size:11px;color:${DBC};margin-top:2px">${DBUG_EX[nextIdx].title}</div>
         <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
           <button onclick="dbugStopAuto()" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
@@ -5011,14 +5011,14 @@ ${dorsiStepRow()}
 let dorsiAutoTmr=null,dorsiAutoSec=0;
 function dorsiAutoNext(nextIdx){
   if(dorsiAutoTmr){clearInterval(dorsiAutoTmr);dorsiAutoTmr=null;}
-  dorsiAutoSec=10;
-  spk('10秒後自動開始下一個動作');
+  dorsiAutoSec=5;
+  spk('5秒後自動開始下一個動作');
   const nav=document.querySelector('.nav');
   if(nav){
     nav.innerHTML=`
       <div style="background:${DSL};border-radius:12px;padding:12px;text-align:center;width:100%">
         <div style="font-size:11px;color:${DSC};margin-bottom:2px">⏭ 自動開始下一個動作</div>
-        <div style="font-size:40px;font-weight:800;color:${DSD};font-family:'DM Mono',monospace;line-height:1" id="dsauto-num">10</div>
+        <div style="font-size:40px;font-weight:800;color:${DSD};font-family:'DM Mono',monospace;line-height:1" id="dsauto-num">5</div>
         <div style="font-size:11px;color:${DSC};margin-top:2px">${DORSI_EX[nextIdx].title}</div>
         <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
           <button onclick="dorsiStopAuto()" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
@@ -5324,14 +5324,14 @@ function ltgo(i){if(i<0||i>=LITE_EX.length)return;liteStopAll();liteCur=i;render
 function liteRst(){liteStopAll();liteS[LITE_EX[liteCur].id]=0;render();}
 function liteAutoNext(nextIdx){
   if(liteAutoTmr){clearInterval(liteAutoTmr);liteAutoTmr=null;}
-  liteAutoSec=10;
-  spk('10秒後自動開始下一個動作：'+LITE_EX[nextIdx].title);
+  liteAutoSec=5;
+  spk('5秒後自動開始下一個動作：'+LITE_EX[nextIdx].title);
   const nav=document.querySelector('.nav');
   if(nav){
     nav.innerHTML=`
       <div style="background:${LTL};border-radius:12px;padding:12px;text-align:center;width:100%">
         <div style="font-size:11px;color:${LTC};margin-bottom:2px">⏭ 自動開始下一個動作</div>
-        <div style="font-size:40px;font-weight:800;color:${LTD};font-family:'DM Mono',monospace;line-height:1" id="ltauto-num">10</div>
+        <div style="font-size:40px;font-weight:800;color:${LTD};font-family:'DM Mono',monospace;line-height:1" id="ltauto-num">5</div>
         <div style="font-size:11px;color:${LTC};margin-top:2px">${LITE_EX[nextIdx].title}</div>
         <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
           <button onclick="liteStopAll();render();" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
