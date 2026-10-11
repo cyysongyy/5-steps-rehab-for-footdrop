@@ -732,265 +732,6 @@ const LIFT_IMGS = {
 };
 
 
-// ══════════════════════════════
-//  精簡版（從各模組挑出 10 個子項目組合）
-// ══════════════════════════════
-const LTC='#0f766e',LTL='#ccfbf1',LTD='#134e4a';
-const LITE_EX=[
-  {id:'l1',title:'腳掌抬起',from:'腳掌抬起',badge:'約1分鐘',icon:'ti-arrow-big-up',
-   desc:'雙腳前腳掌向內旋轉，一腳前掌交疊在另一腳前掌上方，腳跟踩地。利用腳背力量將前腳掌撐起，停留 2～3 秒後慢慢放下。重複 10～15 次，完成後交換上下位置再做一次。',
-   tip:'感受出力的部位是腳背（脛前肌），不是靠腳趾抓地。',
-   vc:{s:'精簡版開始。第一個動作，腳掌抬起，雙腳前腳掌交疊，利用腳背力量把前腳掌撐起，停留兩秒，慢慢放下',m:'交換上下位置，繼續撐起、停留、放下',e:'腳掌抬起完成'},
-   img:()=>LIFT_IMGS.lift_a2, dur:69},
-  {id:'l2',title:'腳掌左右擺動',from:'腳掌靈活訓練・腳掌左右倒',badge:'左右各10次',icon:'ti-arrows-horizontal',
-   desc:'腳跟保持貼地，只讓前腳掌慢慢向左倒，回到中間，再慢慢向右倒，回到中間。',
-   tip:'腳跟保持貼地，只讓前腳掌左右倒，慢慢控制，不要用整條腿帶動。',
-   vc:{s:'腳掌左右擺動，腳跟貼地，跟著口令慢慢做',e:'左右擺動完成'},
-   cue:['向左倒','一','二','三','回中','一','二','三','四','五','向右倒','一','二','三'],
-   img:()=>FOOT_IMGS.f2, dur:60},
-  {id:'l3',title:'腳掌拉筋（只往左）',from:'腳掌靈活訓練・彈力帶內翻',badge:'往左10次',icon:'ti-arrow-left',
-   desc:'套上彈力帶，腳跟穩定，腳掌只往左（向內收）拉，停一下，再慢慢回到中間。只做往左這個方向。',
-   tip:'力量來自腳踝本身，動作放慢，避免用膝蓋或髖部代償。',
-   vc:{s:'腳掌拉筋，只往左，跟著口令慢慢做',e:'腳掌拉筋完成'},
-   cue:['往左','一','二','三','回中','一','二','三'],
-   img:()=>FOOT_IMGS.f3, dur:45},
-  {id:'l4',title:'單腳站立（右腳）',from:'步態平衡訓練・單腳站立',badge:'30秒',icon:'ti-yoga',
-   desc:'扶椅背，右腳單腳站立，保持骨盆水平與平衡。',
-   tip:'感受腳底與地面接觸，膝蓋不要鎖死。',
-   vc:{s:'單腳站立，右腳站穩，扶著椅背，保持骨盆水平',m:'很好，繼續保持，感受腳底穩定感',e:'單腳站立完成'},
-   img:()=>PROP_IMGS.p1, dur:30},
-  {id:'l5',title:'右腳站立，左腳前中後點',from:'本體覺訓練・單腳點地',badge:'做3圈',icon:'ti-compass',
-   desc:'右腳為軸心站穩，左腳依序輕點前、左前、左、左後、後方後回中。',
-   tip:'右腳為不動軸心，訓練支撐腳的動態控制。',
-   vc:{s:'右腳站穩，左腳依序輕點前方、左前方',m:'繼續點左方、左後方、後方，保持右腳穩定',e:'單腳點地完成'},
-   img:()=>PROP_IMGS.p4, dur:40},
-  {id:'l6',title:'深蹲',from:'彈力帶訓練・深蹲',badge:'10下',icon:'ti-activity',
-   desc:'雙腳與肩同寬，雙手交叉抱胸（可踩彈力帶增加阻力），膝蓋對準腳尖慢慢蹲下，再站起。重複 10 下。',
-   tip:'膝蓋對準腳尖、不要內扣，背部保持挺直。',
-   vc:{s:'深蹲，雙手抱胸，膝蓋對準腳尖，慢慢蹲下再站起',m:'繼續，控制速度，膝蓋不要內扣',e:'深蹲完成'},
-   img:()=>PROP_IMGS.p5, dur:40},
-  {id:'l7',title:'慢步向前（停止3秒）',from:'本體覺訓練・踏步＋停住',badge:'向前5步',icon:'ti-player-stop',
-   desc:'慢慢向前跨一步，瞬間煞車停住 3 秒，再跨下一步。共 5 步。',
-   tip:'每次停住時，確認右腳的位置與重心是否穩定。',
-   vc:{s:'慢步向前，跨一步，停住三秒',m:'再跨一步，停住，感受右腳穩定',e:'慢步向前完成'},
-   img:()=>PROP_IMGS.p6, dur:30},
-  {id:'l8',title:'腳抱向胸口',from:'臥姿腰椎復健・單膝抱胸',badge:'左右各20秒',icon:'ti-gender-androgyne',
-   desc:'仰躺，一腳彎曲抱向胸口，另一腳自然伸直，維持 20 秒後換邊。',
-   tip:'保持自然呼吸，感受下背與臀部的伸展。',
-   vc:{s:'仰躺，右腳彎曲抱向胸口，另一腳伸直，維持二十秒',m:'換邊，左腳彎曲抱向胸口',e:'抱膝完成'},
-   img:()=>'data:image/jpeg;base64,'+BED_LUMBAR[0].imgs[0], dur:45},
-  {id:'l9',title:'橋式運動',from:'臥姿腰椎復健・橋式運動',badge:'10次',icon:'ti-triangle',
-   desc:'仰躺、雙膝彎曲，雙手放身體兩側。臀部慢慢抬離床面，身體呈一直線，停留 3～5 秒，緩慢放下。重複 10 次。',
-   tip:'若有疼痛或不適，請立即停止。',
-   vc:{s:'橋式運動，雙膝彎曲，臀部慢慢抬起，身體呈一直線，停留三到五秒',m:'繼續，感受臀肌出力，控制放下',e:'橋式完成'},
-   img:()=>'data:image/jpeg;base64,'+BED_LUMBAR[1].imgs[0], dur:60},
-  {id:'l10',title:'死蟲：手＋對側腳',from:'死蟲式核心訓練・手＋對側腳',badge:'左右各5次',icon:'ti-arrows-diagonal',
-   desc:'仰躺，雙髖雙膝約 90 度。右手往頭頂＋左腳往前伸，回到中間；再換左手往頭頂＋右腳往前伸，回到中間。',
-   tip:'重點不是伸多遠，動作放慢，腰部貼地，感受核心與骨盆的穩定。',
-   vc:{s:'最後一個動作，死蟲手加對側腳，右手往頭頂，左腳往前伸，回到中間',e:'手加對側腳完成'},
-   cue:['一','伸','二','停','三','回','四','穩'],
-   img:()=>DBUG_IMGS.d4, dur:80}
-];
-let liteCur=0,liteS={},liteTmr=null,liteAutoTmr=null,liteAutoSec=0,customLite={};
-function liteImg(ex){try{return ex.img()||'';}catch(e){return '';}}
-function getLiteDur(id){
-  if(customLite[id]!==undefined)return customLite[id];
-  try{const s=localStorage.getItem('liteDur_'+id);if(s!==null)return parseInt(s);}catch(e){}
-  return LITE_EX.find(e=>e.id===id).dur;
-}
-function isLiteModified(id){return getLiteDur(id)!==LITE_EX.find(e=>e.id===id).dur;}
-function updateLiteChip(id,delta,min,max){
-  const nv=Math.max(min,Math.min(max,getLiteDur(id)+delta));
-  customLite[id]=nv;
-  try{localStorage.setItem('liteDur_'+id,nv);}catch(e){}
-  if(liteTmr){clearInterval(liteTmr);liteTmr=null;}
-  liteS[id]=0;render();
-}
-function liteStepRow(){
-  let h='<div class="steprow" id="steprow">';
-  LITE_EX.forEach((ex,i)=>{
-    if(i>0){const d=(liteS[LITE_EX[i-1].id]||0)>=1;h+=`<div class="sbar" style="${d?'background:'+LTC:''}"></div>`;}
-    const d=(liteS[ex.id]||0)>=1,c=i===liteCur;
-    h+=`<div class="sdot" onclick="ltgo(${i})" style="cursor:pointer">
-      <div class="sn" style="${c?'background:'+LTL+';border-color:'+LTC+';color:'+LTC:d?'background:'+LTC+';border-color:'+LTC+';color:#fff':''}">
-        ${d&&!c?'<i class="ti ti-check" style="font-size:12px"></i>':i+1}
-      </div>
-      <div class="sl">${ex.title}</div>
-    </div>`;
-  });
-  return h+'</div>';
-}
-function liteHTML(){
-  const ex=LITE_EX[liteCur];
-  const done=(liteS[ex.id]||0)>=1;
-  const last=liteCur===LITE_EX.length-1;
-  const dur=getLiteDur(ex.id),mod=isLiteModified(ex.id);
-  const src=liteImg(ex);
-  return `
-<div class="hdr">
-  <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
-  <div class="hic" style="background:${LTL}"><i class="ti ti-bolt" style="font-size:18px;color:${LTC}"></i></div>
-  <div class="htx"><h1>精簡版</h1><p>10 個重點動作・約 ${Math.round(LITE_EX.reduce((a,e)=>a+getLiteDur(e.id),0)/60)} 分鐘</p></div>
-</div>
-${liteStepRow()}
-<div class="vrow">
-  <i class="ti ti-volume" style="font-size:15px;color:${LTC}"></i>
-  <span class="vlbl">語音引導</span>
-  <span class="vst" id="vst" style="color:${LTC}">${voiceOn?'開啟':'關閉'}</span>
-  <button class="tgl ${voiceOn?'':'off'}" id="vtgl" onclick="togV()" style="background:${voiceOn?LTC:'#ccc'}"></button>
-</div>
-<div class="card">
-  <div class="ctop">
-    <div class="cnum" style="background:${LTL};color:${LTC}">${liteCur+1}</div>
-    <span class="ct">${ex.title}</span>
-    <span class="cbdg" style="background:${LTL};color:${LTC};border-color:rgba(15,118,110,.25)">${ex.badge}${mod?' ✎':''}</span>
-  </div>
-  <div class="cbody">
-    <div style="font-size:11.5px;color:var(--tx2);margin-bottom:8px"><i class="ti ti-link" style="font-size:12px"></i> 來源：${ex.from}</div>
-    ${src?`<div style="border-radius:12px;overflow:hidden;margin-bottom:10px;border:1px solid rgba(15,118,110,.2)"><img src="${src}" alt="${ex.title}" style="width:100%;display:block"/></div>`:''}
-    <div class="warm-block" style="border-color:${LTC}">
-      <div class="warm-block-title" style="color:${LTC}"><i class="ti ${ex.icon}"></i><span>${ex.title}</span></div>
-      <div class="warm-steps">${ex.desc.split('。').filter(s=>s.trim()).map(s=>`<div class="warm-step">${s}。</div>`).join('')}</div>
-    </div>
-    <div class="warm-tip" style="color:${LTD};background:${LTL}"><i class="ti ti-bulb" style="color:${LTC}"></i><span>${ex.tip}</span></div>
-    <div class="chips" style="display:flex;justify-content:center">
-      <div class="chip${mod?' mod':''}" style="flex:0 0 150px">
-        <div class="chip-label" style="${mod?'color:'+LTD:''}">本動作時間（秒）${mod?' ✎':''}</div>
-        <div class="stepper">
-          <button class="stp-btn" style="border-color:${LTC};color:${LTC}" onclick="event.stopPropagation();updateLiteChip('${ex.id}',-5,10,240)">−</button>
-          <span class="stp-val" style="color:${LTD}">${dur}</span>
-          <button class="stp-btn" style="border-color:${LTC};color:${LTC}" onclick="event.stopPropagation();updateLiteChip('${ex.id}',5,10,240)">+</button>
-        </div>
-      </div>
-    </div>
-    <div class="phi" id="ltphi" style="display:none;border-color:${LTC};background:${LTL}"><div class="phd" style="background:${LTC}"></div><span id="ltpht">進行中</span></div>
-    <div class="twrap">
-      <div class="rw">
-        <svg width="84" height="84" viewBox="0 0 100 100">
-          <circle class="trk" cx="50" cy="50" r="42"/>
-          <circle class="fil" id="ltring" cx="50" cy="50" r="42" stroke-dasharray="${C42}" stroke-dashoffset="0" style="stroke:${LTC}"/>
-        </svg>
-        <div class="rlb"><span class="rn" id="lttc">${done?'✓':'--'}</span><span class="ru">秒</span></div>
-      </div>
-    </div>
-    <div class="dban" id="ltban" style="${done?'display:block;':''}background:${LTL};border-color:${LTC};color:${LTC}">✓ 完成！</div>
-    <div class="btns">
-      <button class="bgo" id="ltbgo" onclick="startLite()" style="background:${LTC}" ${done?'disabled':''}>
-        ${done?'<i class="ti ti-circle-check"></i> 已完成':'<i class="ti ti-player-play"></i> 開始（'+dur+'秒）'}
-      </button>
-      <button class="brst" onclick="liteRst()">重置</button>
-    </div>
-    <div class="nav">
-      <button class="npv" onclick="ltgo(${liteCur-1})" ${liteCur===0?'disabled':''}><i class="ti ti-arrow-left"></i> 上一個</button>
-      <button class="nnx" onclick="${last?'liteFinish()':'ltgo('+(liteCur+1)+')'}" style="background:${LTD}">
-        ${last?'完成訓練 <i class="ti ti-flag"></i>':'下一個 <i class="ti ti-arrow-right"></i>'}
-      </button>
-    </div>
-  </div>
-</div>`;
-}
-function liteStopAll(){
-  if(liteTmr){clearInterval(liteTmr);liteTmr=null;}
-  if(liteAutoTmr){clearInterval(liteAutoTmr);liteAutoTmr=null;}
-}
-function ltgo(i){if(i<0||i>=LITE_EX.length)return;liteStopAll();liteCur=i;render();}
-function liteRst(){liteStopAll();liteS[LITE_EX[liteCur].id]=0;render();}
-function liteAutoNext(nextIdx){
-  if(liteAutoTmr){clearInterval(liteAutoTmr);liteAutoTmr=null;}
-  liteAutoSec=10;
-  spk('10秒後自動開始下一個動作：'+LITE_EX[nextIdx].title);
-  const nav=document.querySelector('.nav');
-  if(nav){
-    nav.innerHTML=`
-      <div style="background:${LTL};border-radius:12px;padding:12px;text-align:center;width:100%">
-        <div style="font-size:11px;color:${LTC};margin-bottom:2px">⏭ 自動開始下一個動作</div>
-        <div style="font-size:40px;font-weight:800;color:${LTD};font-family:'DM Mono',monospace;line-height:1" id="ltauto-num">10</div>
-        <div style="font-size:11px;color:${LTC};margin-top:2px">${LITE_EX[nextIdx].title}</div>
-        <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
-          <button onclick="liteStopAll();render();" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
-          <button onclick="ltgo(${nextIdx});setTimeout(startLite,400);" style="background:${LTD};color:#fff;border:none;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">立即跳過 →</button>
-        </div>
-      </div>`;
-  }
-  liteAutoTmr=setInterval(()=>{
-    if(mode!=='lite'){clearInterval(liteAutoTmr);liteAutoTmr=null;return;}
-    liteAutoSec--;
-    const el=document.getElementById('ltauto-num');
-    if(el)el.textContent=liteAutoSec;
-    if(liteAutoSec<=3&&liteAutoSec>0)spk(String(liteAutoSec));
-    if(liteAutoSec<=0){
-      clearInterval(liteAutoTmr);liteAutoTmr=null;
-      ltgo(nextIdx);
-      setTimeout(startLite,500);
-    }
-  },1000);
-}
-function startLite(){
-  if(liteTmr)return;
-  const ex=LITE_EX[liteCur];
-  const btn=document.getElementById('ltbgo');
-  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> 進行中…';}
-  spk(ex.vc.s);
-  // 開場語音較長，等它唸完再開始計時
-  const wait=Math.min(6000,Math.max(1500,ex.vc.s.length*230));
-  setTimeout(()=>{if(mode==='lite'&&LITE_EX[liteCur]===ex)runLite(getLiteDur(ex.id));},wait);
-}
-function runLite(totalSec){
-  const ex=LITE_EX[liteCur];
-  let left=totalSec,tick=0;
-  const ring=document.getElementById('ltring'),tc=document.getElementById('lttc');
-  const phi=document.getElementById('ltphi'),pht=document.getElementById('ltpht');
-  if(phi)phi.style.display='flex';
-  const mid=Math.floor(totalSec/2);
-  liteTmr=setInterval(()=>{
-    if(mode!=='lite'){clearInterval(liteTmr);liteTmr=null;return;}
-    left--;
-    if(tc)tc.textContent=left;
-    if(ring)ring.style.strokeDashoffset=C42*(left/totalSec);
-    if(ex.vc.m&&left===mid){spk(ex.vc.m);tick=-3;}
-    else if(ex.cue&&left>0){
-      if(tick>=0){const w=ex.cue[tick%ex.cue.length];spk(w);if(pht&&!/^[一二三四五]$/.test(w))pht.textContent=w;}
-      tick++;
-    }
-    if(left<=0){
-      clearInterval(liteTmr);liteTmr=null;
-      liteS[ex.id]=1;
-      spk(ex.vc.e);
-      const ban=document.getElementById('ltban'),b=document.getElementById('ltbgo');
-      if(ban)ban.style.display='block';
-      if(b){b.innerHTML='<i class="ti ti-circle-check"></i> 已完成';b.style.background=LTD;b.disabled=true;}
-      if(phi)phi.style.display='none';
-      if(tc)tc.textContent='✓';
-      const sr=document.getElementById('steprow');if(sr)sr.outerHTML=liteStepRow();
-      if(liteCur<LITE_EX.length-1){setTimeout(()=>{if(mode==='lite')liteAutoNext(liteCur+1);},1500);}
-      else{setTimeout(()=>{if(mode==='lite')liteFinish();},1800);}
-    }
-  },1000);
-}
-function liteFinish(){
-  liteStopAll();
-  if(comboActive){comboAdvance();return;}
-  spk('精簡版十個動作全部完成，辛苦了！');
-  const mins=Math.round(LITE_EX.reduce((a,e)=>a+getLiteDur(e.id),0)/60);
-  document.getElementById('app').innerHTML=`
-<div class="hdr">
-  <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
-  <div class="hic" style="background:${LTL}"><i class="ti ti-bolt" style="font-size:18px;color:${LTC}"></i></div>
-  <div class="htx"><h1>精簡版</h1><p>訓練完成</p></div>
-</div>
-<div class="card">
-  <div class="cbody" style="text-align:center;padding:24px 0">
-    <div style="font-size:48px;margin-bottom:12px">🎉</div>
-    <h2 style="font-size:20px;font-weight:800;color:${LTC};margin-bottom:8px">精簡版完成！</h2>
-    <p style="color:var(--tx2);font-size:13px;line-height:1.8">完成 <strong>10</strong> 個重點動作 · 約 <strong>${mins}</strong> 分鐘<br>腳踝・平衡・下肢・核心一次顧到。</p>
-  </div>
-  <div style="display:flex;gap:8px;margin-top:4px">
-    <button class="bres" onclick="setMode('lite')" style="background:${LTC}"><i class="ti ti-refresh"></i> 再做一次</button>
-    <button class="bres green" onclick="backHome()"><i class="ti ti-home"></i> 回首頁</button>
-  </div>
-</div>`;
-}
-
 // ── 腰椎時間調整 ──
 function getLumbarExTotal(id){
   if(customLD[id]!==undefined)return customLD[id];
@@ -1194,10 +935,10 @@ function homeHTML(){
     </button>
   </div>
   ${comboBoxHTML()}
-  <div class="mode-card" onclick="setMode('lite')" style="border-color:${LTC};margin-bottom:12px">
-    <div class="mode-icon" style="background:${LTL};color:${LTC}"><i class="ti ti-bolt"></i></div>
+  <div class="mode-card" onclick="setMode('lite')" style="border-color:#0f766e;margin-bottom:12px">
+    <div class="mode-icon" style="background:#ccfbf1;color:#0f766e"><i class="ti ti-bolt"></i></div>
     <div class="mode-text">
-      <span class="mode-badge" style="background:${LTL};color:${LTD}">精簡版 ～8 分鐘</span>
+      <span class="mode-badge" style="background:#ccfbf1;color:#134e4a">精簡版 ～8 分鐘</span>
       <div class="mode-title">精簡版</div>
       <div class="mode-sub">10 個重點動作一次完成<br>腳掌抬起・左右擺動・拉筋・單腳站・點地・深蹲・慢步停・抱膝・橋式・死蟲</div>
     </div>
@@ -5197,6 +4938,288 @@ function closeInfoModal(e){
     document.getElementById('info-modal').classList.remove('open');
     document.body.style.overflow='';
   }
+}
+
+// ══════════════════════════════
+//  精簡版（從各模組挑出 10 個子項目組合）
+// ══════════════════════════════
+const LTC='#0f766e',LTL='#ccfbf1',LTD='#134e4a';
+const LITE_EX=[
+  {id:'l1',title:'腳掌抬起',from:'腳掌抬起',badge:'約1分鐘',icon:'ti-arrow-big-up',
+   desc:'雙腳前腳掌向內旋轉，一腳前掌交疊在另一腳前掌上方，腳跟踩地。利用腳背力量將前腳掌撐起，停留 2～3 秒後慢慢放下。重複 10～15 次，完成後交換上下位置再做一次。',
+   tip:'感受出力的部位是腳背（脛前肌），不是靠腳趾抓地。',
+   vc:{s:'精簡版開始。'+FOOTLIFT[0].spk.s,e:FOOTLIFT[0].spk.e},
+   cue:['抬起','一','二','三','四','五','停留','一','二','三','四','五','放下','一','二','三','四','五'],
+   img:()=>LIFT_IMGS.lift_a2, dur:69},
+  {id:'l2',title:'腳掌左右擺動',from:'腳掌靈活訓練・腳掌左右倒',badge:'左右各10次',icon:'ti-arrows-horizontal',
+   desc:FOOT_EX[1].desc, tip:FOOT_EX[1].tip,
+   vc:{s:FOOT_EX[1].vc.s,e:FOOT_EX[1].vc.e}, cue:FOOT_EX[1].cue,
+   img:()=>FOOT_IMGS.f2, dur:60},
+  {id:'l3',title:'腳掌拉筋（只往左）',from:'腳掌靈活訓練・彈力帶內翻',badge:'往左10次',icon:'ti-arrow-left',
+   desc:'套上彈力帶，腳跟穩定，腳掌只往左（向內收）拉，再慢慢回到中間。只做往左這個方向。',
+   tip:FOOT_EX[2].tip,
+   vc:{s:'腳掌拉筋，只往左，跟著口令慢慢做',e:'腳掌拉筋完成，做得很好'},
+   cue:['往左','一','二','三','回中','一','二','三','四','五'],
+   img:()=>FOOT_IMGS.f3, dur:50},
+  {id:'l4',title:'單腳站立（右腳）',from:'步態平衡訓練・單腳站立',badge:'20秒',icon:'ti-yoga',
+   desc:GAIT_EX[0].desc, tip:GAIT_EX[0].tip, vc:GAIT_EX[0].vc,
+   img:()=>PROP_IMGS.p1, dur:20},
+  {id:'l5',title:'右腳站立，左腳前中後點',from:'本體覺訓練・單腳點地',badge:'做3圈',icon:'ti-compass',
+   desc:PROP_EX[3].desc, tip:PROP_EX[3].tip, vc:PROP_EX[3].vc,
+   img:()=>PROP_IMGS.p4, dur:40},
+  {id:'l6',title:'深蹲',from:'彈力帶訓練・深蹲',badge:'10下',icon:'ti-activity',
+   desc:'雙手交叉抱胸（可踩彈力帶增加阻力），膝蓋對準腳尖慢慢蹲下，再站起。重複 10 下。',
+   tip:'膝蓋對準腳尖、不要內扣，背部保持挺直。',
+   vc:{s:'深蹲，共10下，開始',e:'深蹲完成，很棒！'},
+   cue:['蹲','下'], cueEvery:2,
+   img:()=>PROP_IMGS.p5, dur:40},
+  {id:'l7',title:'慢步向前（停止3秒）',from:'本體覺訓練・踏步＋停住',badge:'向前5步',icon:'ti-player-stop',
+   desc:'慢慢向前跨一步，瞬間煞車停住 3 秒，再跨下一步。共 5 步。',
+   tip:PROP_EX[5].tip,
+   vc:{s:PROP_EX[5].vc.s,m:'繼續向前跨步停住',e:PROP_EX[5].vc.e},
+   img:()=>PROP_IMGS.p6, dur:30},
+  {id:'l8',title:'腳抱向胸口',from:'臥姿腰椎復健・單膝抱胸',badge:'左右各20秒',icon:'ti-gender-androgyne',
+   desc:BED_LUMBAR[0].desc, tip:BED_LUMBAR[0].tip,
+   vc:{s:BED_LUMBAR[0].vc.s,m:BED_LUMBAR[0].vc.m,e:'單膝抱胸完成'}, restSay:BED_LUMBAR[0].vc.e,
+   phases:[{type:'timer',dur:20,label:'右腳抱胸'},{type:'rest',dur:5,label:'換邊'},{type:'timer',dur:20,label:'左腳抱胸'}],
+   img:()=>'data:image/jpeg;base64,'+BED_LUMBAR[0].imgs[0], dur:45},
+  {id:'l9',title:'橋式運動',from:'臥姿腰椎復健・橋式運動',badge:'10次',icon:'ti-triangle',
+   desc:BED_LUMBAR[1].desc, tip:BED_LUMBAR[1].tip,
+   vc:{s:BED_LUMBAR[1].vc.s,m:BED_LUMBAR[1].vc.m,e:'橋式完成'},
+   img:()=>'data:image/jpeg;base64,'+BED_LUMBAR[1].imgs[0], dur:60},
+  {id:'l10',title:'死蟲：手＋對側腳',from:'死蟲式核心訓練・手＋對側腳',badge:'左右各5次',icon:'ti-arrows-diagonal',
+   desc:DBUG_EX[3].desc, tip:DBUG_EX[3].tip, vc:DBUG_EX[3].vc, cue:DBUG_EX[3].cue,
+   img:()=>DBUG_IMGS.d4, dur:80}
+];
+// 依原模組的口令方式，排出每一秒要念的口令與顯示的階段
+function liteTimeline(ex,total){
+  const tl=Array.from({length:total},()=>({say:null,label:'進行中'}));
+  const NUMS=['一','二','三','四','五'];
+  if(ex.phases){
+    const rest=ex.phases.filter(p=>p.type==='rest').reduce((a,p)=>a+p.dur,0);
+    const act=ex.phases.filter(p=>p.type!=='rest').reduce((a,p)=>a+p.dur,0);
+    const scale=Math.max(1,total-rest)/act;
+    let t=0;
+    ex.phases.forEach(p=>{
+      const d=p.type==='rest'?p.dur:Math.max(5,Math.round(p.dur*scale));
+      const mid=Math.floor(d/2);
+      for(let i=0;i<d&&t<total;i++,t++){
+        tl[t].label=p.label;
+        if(p.type==='rest'&&i===0)tl[t].say=ex.restSay;
+        if(p.type!=='rest'&&d-i-1===mid&&ex.vc.m)tl[t].say=ex.vc.m;
+      }
+    });
+  }else if(ex.cue){
+    const every=ex.cueEvery||1;let lbl='進行中';
+    for(let t=0;t<total;t++){
+      if(t%every===0){
+        const w=ex.cue[(t/every)%ex.cue.length];
+        tl[t].say=w;
+        if(!NUMS.includes(w))lbl=w.endsWith('中')?w:w+'中';
+      }
+      tl[t].label=lbl;
+    }
+  }else if(ex.vc.m){
+    tl[total-1-Math.floor(total/2)].say=ex.vc.m;
+  }
+  return tl;
+}
+let liteCur=0,liteS={},liteTmr=null,liteAutoTmr=null,liteAutoSec=0,customLite={};
+function liteImg(ex){try{return ex.img()||'';}catch(e){return '';}}
+function getLiteDur(id){
+  if(customLite[id]!==undefined)return customLite[id];
+  try{const s=localStorage.getItem('liteDur_'+id);if(s!==null)return parseInt(s);}catch(e){}
+  return LITE_EX.find(e=>e.id===id).dur;
+}
+function isLiteModified(id){return getLiteDur(id)!==LITE_EX.find(e=>e.id===id).dur;}
+function updateLiteChip(id,delta,min,max){
+  const nv=Math.max(min,Math.min(max,getLiteDur(id)+delta));
+  customLite[id]=nv;
+  try{localStorage.setItem('liteDur_'+id,nv);}catch(e){}
+  if(liteTmr){clearInterval(liteTmr);liteTmr=null;}
+  liteS[id]=0;render();
+}
+function liteStepRow(){
+  let h='<div class="steprow" id="steprow">';
+  LITE_EX.forEach((ex,i)=>{
+    if(i>0){const d=(liteS[LITE_EX[i-1].id]||0)>=1;h+=`<div class="sbar" style="${d?'background:'+LTC:''}"></div>`;}
+    const d=(liteS[ex.id]||0)>=1,c=i===liteCur;
+    h+=`<div class="sdot" onclick="ltgo(${i})" style="cursor:pointer">
+      <div class="sn" style="${c?'background:'+LTL+';border-color:'+LTC+';color:'+LTC:d?'background:'+LTC+';border-color:'+LTC+';color:#fff':''}">
+        ${d&&!c?'<i class="ti ti-check" style="font-size:12px"></i>':i+1}
+      </div>
+      <div class="sl">${ex.title}</div>
+    </div>`;
+  });
+  return h+'</div>';
+}
+function liteHTML(){
+  const ex=LITE_EX[liteCur];
+  const done=(liteS[ex.id]||0)>=1;
+  const last=liteCur===LITE_EX.length-1;
+  const dur=getLiteDur(ex.id),mod=isLiteModified(ex.id);
+  const src=liteImg(ex);
+  return `
+<div class="hdr">
+  <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
+  <div class="hic" style="background:${LTL}"><i class="ti ti-bolt" style="font-size:18px;color:${LTC}"></i></div>
+  <div class="htx"><h1>精簡版</h1><p>10 個重點動作・約 ${Math.round(LITE_EX.reduce((a,e)=>a+getLiteDur(e.id),0)/60)} 分鐘</p></div>
+</div>
+${liteStepRow()}
+<div class="vrow">
+  <i class="ti ti-volume" style="font-size:15px;color:${LTC}"></i>
+  <span class="vlbl">語音引導</span>
+  <span class="vst" id="vst" style="color:${LTC}">${voiceOn?'開啟':'關閉'}</span>
+  <button class="tgl ${voiceOn?'':'off'}" id="vtgl" onclick="togV()" style="background:${voiceOn?LTC:'#ccc'}"></button>
+</div>
+<div class="card">
+  <div class="ctop">
+    <div class="cnum" style="background:${LTL};color:${LTC}">${liteCur+1}</div>
+    <span class="ct">${ex.title}</span>
+    <span class="cbdg" style="background:${LTL};color:${LTC};border-color:rgba(15,118,110,.25)">${ex.badge}${mod?' ✎':''}</span>
+  </div>
+  <div class="cbody">
+    <div style="font-size:11.5px;color:var(--tx2);margin-bottom:8px"><i class="ti ti-link" style="font-size:12px"></i> 來源：${ex.from}</div>
+    ${src?`<div style="border-radius:12px;overflow:hidden;margin-bottom:10px;border:1px solid rgba(15,118,110,.2)"><img src="${src}" alt="${ex.title}" style="width:100%;display:block"/></div>`:''}
+    <div class="warm-block" style="border-color:${LTC}">
+      <div class="warm-block-title" style="color:${LTC}"><i class="ti ${ex.icon}"></i><span>${ex.title}</span></div>
+      <div class="warm-steps">${ex.desc.split('。').filter(s=>s.trim()).map(s=>`<div class="warm-step">${s}。</div>`).join('')}</div>
+    </div>
+    <div class="warm-tip" style="color:${LTD};background:${LTL}"><i class="ti ti-bulb" style="color:${LTC}"></i><span>${ex.tip}</span></div>
+    <div class="chips" style="display:flex;justify-content:center">
+      <div class="chip${mod?' mod':''}" style="flex:0 0 150px">
+        <div class="chip-label" style="${mod?'color:'+LTD:''}">本動作時間（秒）${mod?' ✎':''}</div>
+        <div class="stepper">
+          <button class="stp-btn" style="border-color:${LTC};color:${LTC}" onclick="event.stopPropagation();updateLiteChip('${ex.id}',-5,10,240)">−</button>
+          <span class="stp-val" style="color:${LTD}">${dur}</span>
+          <button class="stp-btn" style="border-color:${LTC};color:${LTC}" onclick="event.stopPropagation();updateLiteChip('${ex.id}',5,10,240)">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="phi" id="ltphi" style="display:none;border-color:${LTC};background:${LTL}"><div class="phd" style="background:${LTC}"></div><span id="ltpht">進行中</span></div>
+    <div class="twrap">
+      <div class="rw">
+        <svg width="84" height="84" viewBox="0 0 100 100">
+          <circle class="trk" cx="50" cy="50" r="42"/>
+          <circle class="fil" id="ltring" cx="50" cy="50" r="42" stroke-dasharray="${C42}" stroke-dashoffset="0" style="stroke:${LTC}"/>
+        </svg>
+        <div class="rlb"><span class="rn" id="lttc">${done?'✓':'--'}</span><span class="ru">秒</span></div>
+      </div>
+    </div>
+    <div class="dban" id="ltban" style="${done?'display:block;':''}background:${LTL};border-color:${LTC};color:${LTC}">✓ 完成！</div>
+    <div class="btns">
+      <button class="bgo" id="ltbgo" onclick="startLite()" style="background:${LTC}" ${done?'disabled':''}>
+        ${done?'<i class="ti ti-circle-check"></i> 已完成':'<i class="ti ti-player-play"></i> 開始（'+dur+'秒）'}
+      </button>
+      <button class="brst" onclick="liteRst()">重置</button>
+    </div>
+    <div class="nav">
+      <button class="npv" onclick="ltgo(${liteCur-1})" ${liteCur===0?'disabled':''}><i class="ti ti-arrow-left"></i> 上一個</button>
+      <button class="nnx" onclick="${last?'liteFinish()':'ltgo('+(liteCur+1)+')'}" style="background:${LTD}">
+        ${last?'完成訓練 <i class="ti ti-flag"></i>':'下一個 <i class="ti ti-arrow-right"></i>'}
+      </button>
+    </div>
+  </div>
+</div>`;
+}
+function liteStopAll(){
+  if(liteTmr){clearInterval(liteTmr);liteTmr=null;}
+  if(liteAutoTmr){clearInterval(liteAutoTmr);liteAutoTmr=null;}
+}
+function ltgo(i){if(i<0||i>=LITE_EX.length)return;liteStopAll();liteCur=i;render();}
+function liteRst(){liteStopAll();liteS[LITE_EX[liteCur].id]=0;render();}
+function liteAutoNext(nextIdx){
+  if(liteAutoTmr){clearInterval(liteAutoTmr);liteAutoTmr=null;}
+  liteAutoSec=10;
+  spk('10秒後自動開始下一個動作：'+LITE_EX[nextIdx].title);
+  const nav=document.querySelector('.nav');
+  if(nav){
+    nav.innerHTML=`
+      <div style="background:${LTL};border-radius:12px;padding:12px;text-align:center;width:100%">
+        <div style="font-size:11px;color:${LTC};margin-bottom:2px">⏭ 自動開始下一個動作</div>
+        <div style="font-size:40px;font-weight:800;color:${LTD};font-family:'DM Mono',monospace;line-height:1" id="ltauto-num">10</div>
+        <div style="font-size:11px;color:${LTC};margin-top:2px">${LITE_EX[nextIdx].title}</div>
+        <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
+          <button onclick="liteStopAll();render();" style="background:#fff;border:1.5px solid #ef9a9a;color:#e53935;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏹ 停止</button>
+          <button onclick="ltgo(${nextIdx});setTimeout(startLite,400);" style="background:${LTD};color:#fff;border:none;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">立即跳過 →</button>
+        </div>
+      </div>`;
+  }
+  liteAutoTmr=setInterval(()=>{
+    if(mode!=='lite'){clearInterval(liteAutoTmr);liteAutoTmr=null;return;}
+    liteAutoSec--;
+    const el=document.getElementById('ltauto-num');
+    if(el)el.textContent=liteAutoSec;
+    if(liteAutoSec<=3&&liteAutoSec>0)spk(String(liteAutoSec));
+    if(liteAutoSec<=0){
+      clearInterval(liteAutoTmr);liteAutoTmr=null;
+      ltgo(nextIdx);
+      setTimeout(startLite,500);
+    }
+  },1000);
+}
+function startLite(){
+  if(liteTmr)return;
+  const ex=LITE_EX[liteCur];
+  const btn=document.getElementById('ltbgo');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> 進行中…';}
+  spk(ex.vc.s);
+  // 開場語音較長，等它唸完再開始計時
+  const wait=Math.min(6000,Math.max(1500,ex.vc.s.length*230));
+  setTimeout(()=>{if(mode==='lite'&&LITE_EX[liteCur]===ex)runLite(getLiteDur(ex.id));},wait);
+}
+function runLite(totalSec){
+  const ex=LITE_EX[liteCur];
+  const tl=liteTimeline(ex,totalSec);
+  let left=totalSec,t=0;
+  const ring=document.getElementById('ltring'),tc=document.getElementById('lttc');
+  const phi=document.getElementById('ltphi'),pht=document.getElementById('ltpht');
+  if(phi)phi.style.display='flex';
+  liteTmr=setInterval(()=>{
+    if(mode!=='lite'){clearInterval(liteTmr);liteTmr=null;return;}
+    const ev=tl[t]||{};t++;
+    left--;
+    if(tc)tc.textContent=left;
+    if(ring)ring.style.strokeDashoffset=C42*(left/totalSec);
+    if(ev.say)spk(ev.say);
+    if(pht&&ev.label)pht.textContent=ev.label;
+    if(left<=0){
+      clearInterval(liteTmr);liteTmr=null;
+      liteS[ex.id]=1;
+      setTimeout(()=>spk(ex.vc.e),700);
+      const ban=document.getElementById('ltban'),b=document.getElementById('ltbgo');
+      if(ban)ban.style.display='block';
+      if(b){b.innerHTML='<i class="ti ti-circle-check"></i> 已完成';b.style.background=LTD;b.disabled=true;}
+      if(phi)phi.style.display='none';
+      if(tc)tc.textContent='✓';
+      const sr=document.getElementById('steprow');if(sr)sr.outerHTML=liteStepRow();
+      if(liteCur<LITE_EX.length-1){setTimeout(()=>{if(mode==='lite')liteAutoNext(liteCur+1);},2500);}
+      else{setTimeout(()=>{if(mode==='lite')liteFinish();},3000);}
+    }
+  },1000);
+}
+function liteFinish(){
+  liteStopAll();
+  if(comboActive){comboAdvance();return;}
+  spk('精簡版十個動作全部完成，辛苦了！');
+  const mins=Math.round(LITE_EX.reduce((a,e)=>a+getLiteDur(e.id),0)/60);
+  document.getElementById('app').innerHTML=`
+<div class="hdr">
+  <button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>
+  <div class="hic" style="background:${LTL}"><i class="ti ti-bolt" style="font-size:18px;color:${LTC}"></i></div>
+  <div class="htx"><h1>精簡版</h1><p>訓練完成</p></div>
+</div>
+<div class="card">
+  <div class="cbody" style="text-align:center;padding:24px 0">
+    <div style="font-size:48px;margin-bottom:12px">🎉</div>
+    <h2 style="font-size:20px;font-weight:800;color:${LTC};margin-bottom:8px">精簡版完成！</h2>
+    <p style="color:var(--tx2);font-size:13px;line-height:1.8">完成 <strong>10</strong> 個重點動作 · 約 <strong>${mins}</strong> 分鐘<br>腳踝・平衡・下肢・核心一次顧到。</p>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button class="bres" onclick="setMode('lite')" style="background:${LTC}"><i class="ti ti-refresh"></i> 再做一次</button>
+    <button class="bres green" onclick="backHome()"><i class="ti ti-home"></i> 回首頁</button>
+  </div>
+</div>`;
 }
 
 </script>
