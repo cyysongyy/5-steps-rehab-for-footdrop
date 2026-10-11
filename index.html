@@ -1022,7 +1022,7 @@ function togV(){
   if(t){t.classList.toggle('off',!voiceOn);t.style.background=voiceOn?'var(--warm1)':'#ccc';}
   if(s)s.textContent=voiceOn?'開啟':'關閉';
 }
-function spk(t){if(!voiceOn||!window.speechSynthesis)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='zh-TW';u.rate=0.9;window.speechSynthesis.speak(u);}
+function spk(t){if(!voiceOn||!window.speechSynthesis||!t)return;if(document.hidden)return;/* 不在畫面上時一律不出聲，避免干擾復健走路 App */window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='zh-TW';u.rate=0.9;window.speechSynthesis.speak(u);}
 
 // ── 主渲染 ──
 function render(){
@@ -1251,7 +1251,7 @@ function homeHTML(){
       <div class="mode-sub">改善踝關節背屈角度・幫助腳跟著地<br>斜板背屈・膝蓋向牆踝背屈</div>
     </div>
   </div>
-    <a href="https://cyysongyy.github.io/rehab/" target="_blank"
+    <a href="https://cyysongyy.github.io/rehab/" target="_blank" onclick="silenceBeforeLeave()"
       style="display:flex;align-items:center;gap:14px;padding:18px 16px;background:var(--metal);
       border-radius:var(--ra);border:2px solid #3d5a8a;text-decoration:none;color:var(--dtx);
       margin-top:0;">
@@ -1265,7 +1265,7 @@ function homeHTML(){
       </div>
       <i class="ti ti-external-link" style="font-size:16px;color:#3d5a8a;flex-shrink:0;margin-left:auto"></i>
     </a>
-    <a href="https://cyysongyy.github.io/gait/" target="_blank"
+    <a href="https://cyysongyy.github.io/gait/" target="_blank" onclick="silenceBeforeLeave()"
       style="display:flex;align-items:center;gap:14px;padding:18px 16px;background:var(--metal);
       border-radius:var(--ra);border:2px solid #764ba2;text-decoration:none;color:var(--dtx);">
       <div class="mode-icon" style="background:#eef0fd;color:#764ba2;flex-shrink:0">
@@ -5470,6 +5470,16 @@ document.addEventListener('touchend',function(){ setTimeout(awakeSync,0); },true
 
 // 頁面重新載入後自動接回上次進度
 if(resumeSnap){setTimeout(function(){resumeSession(true);},300);}
+
+// 開啟其他 App 前：停掉所有語音與計時，避免背景還在念口令
+function silenceBeforeLeave(){
+  try{window.speechSynthesis&&window.speechSynthesis.cancel();}catch(e){}
+  ['wtmr','tmr','ltmr','fltmr','btmr','chtmr','gluteTmr','gluteAutoTmr','gaitTmr','gaitAutoTmr','propTmr','propAutoTmr',
+   'footTmr','footAutoTmr','rgaitTmr','rgaitAutoTmr','dbugTmr','dbugAutoTmr','dorsiTmr','dorsiAutoTmr',
+   'bandTmr','bandCueTmr','bandAutoTmr','liteTmr','liteAutoTmr'].forEach(function(n){
+     var v=_gv(n);if(v){clearInterval(v);_sv(n,null);}
+   });
+}
 </script>
 
 <!-- ── 說明 & 免責聲明 Modal ── -->
