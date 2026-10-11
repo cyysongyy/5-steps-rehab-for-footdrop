@@ -472,6 +472,147 @@ body.dark-mode .mode-icon{box-shadow:0 0 0 1px rgba(255,255,255,.08),0 2px 8px r
 <body>
 <div class="app" id="app"></div>
 <script>
+// ══════════════════════════════
+//  暫停／繼續 + 進度保存
+//  暫停時凍結所有模組的計時、口令與自動接續（以「虛擬時鐘」做到，不必改各模組）。
+//  App 縮到背景時自動暫停；回來時顯示「繼續」。
+//  若 iOS 把頁面重新載入，首頁會出現「繼續上次進度」。
+// ══════════════════════════════
+var appPaused=false;
+(function(){
+  var _si=window.setInterval.bind(window),_st=window.setTimeout.bind(window),_ct=window.clearTimeout.bind(window);
+  var _now=Date.now.bind(Date);
+  var pausedAt=0,pausedTotal=0,pending=[],cancelled={};
+  Date.now=function(){return (appPaused?pausedAt:_now())-pausedTotal;};
+  window.setInterval=function(fn,ms){
+    if(typeof fn!=='function')return _si(fn,ms);
+    var a=[].slice.call(arguments,2);
+    return _si(function(){if(appPaused)return;fn.apply(null,a);},ms);
+  };
+  window.setTimeout=function(fn,ms){
+    if(typeof fn!=='function')return _st(fn,ms);
+    var a=[].slice.call(arguments,2),id;
+    id=_st(function(){
+      if(appPaused){pending.push({id:id,run:function(){fn.apply(null,a);}});return;}
+      fn.apply(null,a);
+    },ms);
+    return id;
+  };
+  window.clearTimeout=function(id){cancelled[id]=1;pending=pending.filter(function(p){return p.id!==id;});_ct(id);};
+  window.appPause=function(){
+    if(appPaused||typeof mode==='undefined'||mode==='home')return;
+    appPaused=true;pausedAt=_now();
+    try{window.speechSynthesis&&window.speechSynthesis.cancel();}catch(e){}
+    pauseUiSync();
+  };
+  window.appResume=function(){
+    if(!appPaused)return;
+    pausedTotal+=_now()-pausedAt;appPaused=false;
+    var q=pending;pending=[];
+    q.forEach(function(p,i){if(!cancelled[p.id])_st(p.run,400+i*50);});
+    pauseUiSync();
+  };
+})();
+function appResumeClick(){
+  appResume();
+  if(typeof spk==='function')spk('繼續');
+}
+function appPauseHome(){
+  appResume();
+  if(typeof backHome==='function')backHome();
+}
+function pauseUiSync(){
+  if(!document.body)return;
+  var inTrain=(typeof mode!=='undefined'&&mode!=='home');
+  var btn=document.getElementById('pause-fab');
+  if(!btn){
+    btn=document.createElement('button');btn.id='pause-fab';
+    btn.style.cssText='position:fixed;left:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:9998;background:rgba(30,30,30,.82);color:#fff;border:none;font-size:14px;font-weight:700;padding:9px 16px;border-radius:24px;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer';
+    btn.onclick=function(e){e.stopPropagation();appPaused?appResumeClick():appPause();};
+    document.body.appendChild(btn);
+  }
+  btn.style.display=inTrain?'block':'none';
+  btn.textContent=appPaused?'▶ 繼續':'⏸ 暫停';
+  var ov=document.getElementById('pause-ov');
+  if(appPaused&&inTrain){
+    if(!ov){
+      ov=document.createElement('div');ov.id='pause-ov';
+      ov.style.cssText='position:fixed;inset:0;z-index:9997;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:24px';
+      ov.innerHTML='<div style="background:#fff;color:#222;border-radius:18px;padding:24px 22px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3)">'
+        +'<div style="font-size:40px;margin-bottom:6px">⏸</div>'
+        +'<div style="font-size:18px;font-weight:800;margin-bottom:6px">已暫停</div>'
+        +'<div style="font-size:13px;color:#666;line-height:1.7;margin-bottom:16px">計時與口令都停在原處，<br>按「繼續」從中斷的地方接著做。</div>'
+        +'<button onclick="appResumeClick()" style="width:100%;background:#0f766e;color:#fff;border:none;border-radius:12px;padding:13px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer">▶ 繼續</button>'
+        +'<button onclick="appPauseHome()" style="width:100%;margin-top:8px;background:transparent;color:#888;border:none;padding:8px;font-size:13px;font-family:inherit;cursor:pointer">結束，回首頁</button>'
+        +'</div>';
+      document.body.appendChild(ov);
+    }
+    ov.style.display='flex';
+  }else if(ov){ov.style.display='none';}
+}
+// 縮到背景／切換 App／鎖定時自動暫停
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='hidden'){appPause();saveSession(true);}
+});
+window.addEventListener('pagehide',function(){appPause();saveSession(true);});
+
+// ── 進度保存（頁面被系統重新載入時可接續）──
+var SESSION_KEY='rehabSession';
+var SESSION_VARS={
+  lite:['liteCur','liteS'], warm:['wcur','wS'], rehab:['rcur','cS'], lumbar:['lcur','lS'],
+  bedlumbar:['bcur','bS'], chest:['chcur','chSets'], band:['bandCur','bandSet','bandDone'],
+  glute:['gluteCur','gluteS'], footlift:['flS'], gait:['gaitCur','gaitS'], prop:['propCur','propS'],
+  foot:['footCur','footS'], rgait:['rgaitCur','rgaitS'], dbug:['dbugCur','dbugS'], dorsi:['dorsiCur','dorsiS']
+};
+var SESSION_CUR={lite:'liteCur',warm:'wcur',rehab:'rcur',lumbar:'lcur',bedlumbar:'bcur',chest:'chcur',band:'bandCur',gait:'gaitCur',glute:'gluteCur',prop:'propCur',foot:'footCur',rgait:'rgaitCur',dbug:'dbugCur',dorsi:'dorsiCur'};
+var resumeSnap=null;
+try{
+  var _rs=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
+  if(_rs&&_rs.mode&&_rs.mode!=='home'&&(new Date().getTime()-_rs.t)<6*3600*1000)resumeSnap=_rs;
+}catch(e){}
+function _gv(n){try{return (new Function('return '+n))();}catch(e){return undefined;}}
+function _sv(n,v){try{(new Function('v',n+'=v'))(v);}catch(e){}}
+function saveSession(force){
+  if(typeof mode==='undefined')return;
+  if(mode==='home'){
+    if(resumeSnap&&!force)return;           // 還沒決定要不要接續，先保留舊紀錄
+    if(!resumeSnap){try{localStorage.removeItem(SESSION_KEY);}catch(e){}}
+    return;
+  }
+  var vars={};
+  (SESSION_VARS[mode]||[]).forEach(function(n){vars[n]=_gv(n);});
+  var snap={t:new Date().getTime(),mode:mode,vars:vars,
+    combo:(typeof comboActive!=='undefined'&&comboActive)?{q:comboQueue,pos:comboPos}:null};
+  try{localStorage.setItem(SESSION_KEY,JSON.stringify(snap));}catch(e){}
+}
+function resumeBannerHTML(){
+  if(!resumeSnap)return '';
+  var meta=(typeof COMBO_META!=='undefined'&&COMBO_META[resumeSnap.mode])||{label:resumeSnap.mode};
+  var cn=SESSION_CUR[resumeSnap.mode],idx=cn&&resumeSnap.vars?resumeSnap.vars[cn]:null;
+  var mins=Math.max(1,Math.round((new Date().getTime()-resumeSnap.t)/60000));
+  return '<div style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#0f766e,#134e4a);color:#fff;border-radius:14px;padding:12px 14px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.18)">'
+    +'<div style="font-size:24px">⏯</div>'
+    +'<div style="flex:1;min-width:0"><div style="font-size:11.5px;opacity:.85">上次做到一半（'+mins+' 分鐘前）</div>'
+    +'<div style="font-size:14px;font-weight:800">'+meta.label+(typeof idx==='number'?'・第 '+(idx+1)+' 個動作':'')+(resumeSnap.combo?'（套餐）':'')+'</div></div>'
+    +'<button onclick="resumeSession()" style="background:#fff;color:#0f766e;border:none;border-radius:10px;padding:9px 12px;font-weight:800;font-size:13px;font-family:inherit;cursor:pointer">繼續</button>'
+    +'<button onclick="dismissResume()" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:8px 10px;font-size:12px;font-family:inherit;cursor:pointer">略過</button>'
+    +'</div>';
+}
+function dismissResume(){
+  resumeSnap=null;
+  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
+  render();
+}
+function resumeSession(){
+  var s=resumeSnap;if(!s)return;
+  resumeSnap=null;
+  setMode(s.mode);                          // 先用原本的初始化
+  Object.keys(s.vars||{}).forEach(function(n){ if(s.vars[n]!==undefined&&s.vars[n]!==null)_sv(n,s.vars[n]); });
+  if(s.combo&&s.combo.q&&s.combo.q.length){comboQueue=s.combo.q;comboPos=s.combo.pos;comboActive=true;}
+  render();
+  if(typeof spk==='function')spk('從上次的進度繼續，按開始接著做');
+}
+
 const C42 = 2 * Math.PI * 42;
 
 // ── 白天／黑夜模式（套用於訓練頁面）──
@@ -838,6 +979,8 @@ function spk(t){if(!voiceOn||!window.speechSynthesis)return;window.speechSynthes
 function render(){
   const app=document.getElementById('app');
   awakeSync();
+  pauseUiSync();
+  saveSession();
   if(mode==='home'){app.innerHTML=homeHTML();return;}
   if(mode==='lite'){app.innerHTML=liteHTML();return;}
   if(mode==='warm'){app.innerHTML=warmHTML();return;}
@@ -935,6 +1078,7 @@ function homeHTML(){
       說明 &amp; 免責聲明
     </button>
   </div>
+  ${resumeBannerHTML()}
   ${comboBoxHTML()}
   <div class="mode-card" onclick="setMode('lite')" style="border-color:#0f766e;margin-bottom:12px">
     <div class="mode-icon" style="background:#ccfbf1;color:#0f766e"><i class="ti ti-bolt"></i></div>
