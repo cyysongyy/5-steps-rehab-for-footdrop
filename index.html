@@ -478,11 +478,12 @@ body.dark-mode .mode-icon{box-shadow:0 0 0 1px rgba(255,255,255,.08),0 2px 8px r
 //  App 縮到背景時自動暫停；回來時顯示「繼續」。
 //  若 iOS 把頁面重新載入，首頁會出現「繼續上次進度」。
 // ══════════════════════════════
-var appPaused=false;
+var appPaused=false,autoPaused=false,cdLeft=null,cdTimer=null;
 (function(){
   var _si=window.setInterval.bind(window),_st=window.setTimeout.bind(window),_ct=window.clearTimeout.bind(window);
   var _now=Date.now.bind(Date);
   var pausedAt=0,pausedTotal=0,pending=[],cancelled={};
+  window._rawSI=_si;window._rawST=_st;
   Date.now=function(){return (appPaused?pausedAt:_now())-pausedTotal;};
   window.setInterval=function(fn,ms){
     if(typeof fn!=='function')return _si(fn,ms);
@@ -499,13 +500,14 @@ var appPaused=false;
     return id;
   };
   window.clearTimeout=function(id){cancelled[id]=1;pending=pending.filter(function(p){return p.id!==id;});_ct(id);};
-  window.appPause=function(){
+  window.appPause=function(auto){
     if(appPaused||typeof mode==='undefined'||mode==='home')return;
-    appPaused=true;pausedAt=_now();
+    appPaused=true;autoPaused=!!auto;pausedAt=_now();
     try{window.speechSynthesis&&window.speechSynthesis.cancel();}catch(e){}
     pauseUiSync();
   };
   window.appResume=function(){
+    cdStop();autoPaused=false;
     if(!appPaused)return;
     pausedTotal+=_now()-pausedAt;appPaused=false;
     var q=pending;pending=[];
@@ -513,6 +515,19 @@ var appPaused=false;
     pauseUiSync();
   };
 })();
+function cdStop(){if(cdTimer){clearInterval(cdTimer);cdTimer=null;}cdLeft=null;}
+// 回到 App 時：自動暫停的狀態會倒數 3 秒後自己繼續（手動按暫停的不會）
+function autoResumeCountdown(){
+  if(!appPaused||!autoPaused||cdTimer)return;
+  cdLeft=3;pauseUiSync();
+  if(typeof spk==='function')spk('歡迎回來，三秒後繼續');
+  cdTimer=_rawSI(function(){
+    cdLeft--;
+    if(cdLeft<=0){cdStop();appResume();}
+    else pauseUiSync();
+  },1000);
+}
+function cdKeepPaused(){cdStop();autoPaused=false;pauseUiSync();}
 function appResumeClick(){
   appResume();
   if(typeof spk==='function')spk('繼續');
@@ -528,7 +543,7 @@ function pauseUiSync(){
   if(!btn){
     btn=document.createElement('button');btn.id='pause-fab';
     btn.style.cssText='position:fixed;left:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:9998;background:rgba(30,30,30,.82);color:#fff;border:none;font-size:14px;font-weight:700;padding:9px 16px;border-radius:24px;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer';
-    btn.onclick=function(e){e.stopPropagation();appPaused?appResumeClick():appPause();};
+    btn.onclick=function(e){e.stopPropagation();appPaused?appResumeClick():appPause(false);};
     document.body.appendChild(btn);
   }
   btn.style.display=inTrain?'block':'none';
@@ -538,23 +553,33 @@ function pauseUiSync(){
     if(!ov){
       ov=document.createElement('div');ov.id='pause-ov';
       ov.style.cssText='position:fixed;inset:0;z-index:9997;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:24px';
-      ov.innerHTML='<div style="background:#fff;color:#222;border-radius:18px;padding:24px 22px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3)">'
-        +'<div style="font-size:40px;margin-bottom:6px">⏸</div>'
-        +'<div style="font-size:18px;font-weight:800;margin-bottom:6px">已暫停</div>'
-        +'<div style="font-size:13px;color:#666;line-height:1.7;margin-bottom:16px">計時與口令都停在原處，<br>按「繼續」從中斷的地方接著做。</div>'
-        +'<button onclick="appResumeClick()" style="width:100%;background:#0f766e;color:#fff;border:none;border-radius:12px;padding:13px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer">▶ 繼續</button>'
-        +'<button onclick="appPauseHome()" style="width:100%;margin-top:8px;background:transparent;color:#888;border:none;padding:8px;font-size:13px;font-family:inherit;cursor:pointer">結束，回首頁</button>'
-        +'</div>';
       document.body.appendChild(ov);
     }
+    var BTN='width:100%;background:#0f766e;color:#fff;border:none;border-radius:12px;padding:13px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer';
+    var LNK='width:100%;margin-top:8px;background:transparent;color:#888;border:none;padding:8px;font-size:13px;font-family:inherit;cursor:pointer';
+    ov.innerHTML='<div style="background:#fff;color:#222;border-radius:18px;padding:24px 22px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3)">'
+      +(cdLeft!==null
+        ?'<div style="font-size:13px;color:#0f766e;font-weight:700;margin-bottom:4px">歡迎回來</div>'
+         +'<div style="font-size:64px;font-weight:800;color:#0f766e;line-height:1.1">'+cdLeft+'</div>'
+         +'<div style="font-size:13px;color:#666;margin:6px 0 16px">秒後從中斷的地方自動繼續</div>'
+         +'<button onclick="appResumeClick()" style="'+BTN+'">▶ 立即繼續</button>'
+         +'<button onclick="cdKeepPaused()" style="'+LNK+'">先保持暫停</button>'
+        :'<div style="font-size:40px;margin-bottom:6px">⏸</div>'
+         +'<div style="font-size:18px;font-weight:800;margin-bottom:6px">已暫停</div>'
+         +'<div style="font-size:13px;color:#666;line-height:1.7;margin-bottom:16px">計時與口令都停在原處，<br>按「繼續」從中斷的地方接著做。</div>'
+         +'<button onclick="appResumeClick()" style="'+BTN+'">▶ 繼續</button>'
+         +'<button onclick="appPauseHome()" style="'+LNK+'">結束，回首頁</button>')
+      +'</div>';
     ov.style.display='flex';
   }else if(ov){ov.style.display='none';}
 }
 // 縮到背景／切換 App／鎖定時自動暫停
 document.addEventListener('visibilitychange',function(){
-  if(document.visibilityState==='hidden'){appPause();saveSession(true);}
+  if(document.visibilityState==='hidden'){cdStop();appPause(true);saveSession(true);}
+  else if(document.visibilityState==='visible'){_rawST(autoResumeCountdown,300);}
 });
-window.addEventListener('pagehide',function(){appPause();saveSession(true);});
+window.addEventListener('pagehide',function(){appPause(true);saveSession(true);});
+window.addEventListener('pageshow',function(e){if(e.persisted)_rawST(autoResumeCountdown,300);});
 
 // ── 進度保存（頁面被系統重新載入時可接續）──
 var SESSION_KEY='rehabSession';
@@ -603,14 +628,38 @@ function dismissResume(){
   try{localStorage.removeItem(SESSION_KEY);}catch(e){}
   render();
 }
-function resumeSession(){
+function resumeSession(auto){
   var s=resumeSnap;if(!s)return;
   resumeSnap=null;
   setMode(s.mode);                          // 先用原本的初始化
   Object.keys(s.vars||{}).forEach(function(n){ if(s.vars[n]!==undefined&&s.vars[n]!==null)_sv(n,s.vars[n]); });
   if(s.combo&&s.combo.q&&s.combo.q.length){comboQueue=s.combo.q;comboPos=s.combo.pos;comboActive=true;}
   render();
+  if(auto){resumeTapOverlay(s);return;}
   if(typeof spk==='function')spk('從上次的進度繼續，按開始接著做');
+}
+// 頁面被重新載入後：自動回到上次的動作，點一下就開始（iOS 規定語音需要先點一下畫面）
+function resumeTapOverlay(s){
+  var meta=(typeof COMBO_META!=='undefined'&&COMBO_META[s.mode])||{label:s.mode};
+  var cn=SESSION_CUR[s.mode],idx=cn&&s.vars?s.vars[cn]:null;
+  var ov=document.createElement('div');ov.id='resume-tap';
+  ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:24px';
+  ov.innerHTML='<div style="background:#fff;color:#222;border-radius:18px;padding:24px 22px;max-width:320px;width:100%;text-align:center">'
+    +'<div style="font-size:36px">⏯</div>'
+    +'<div style="font-size:13px;color:#0f766e;font-weight:700;margin:4px 0">已回到上次的進度</div>'
+    +'<div style="font-size:17px;font-weight:800;margin-bottom:16px">'+meta.label+(typeof idx==='number'?'・第 '+(idx+1)+' 個動作':'')+'</div>'
+    +'<button id="resume-tap-go" style="width:100%;background:#0f766e;color:#fff;border:none;border-radius:12px;padding:14px;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer">▶ 點一下繼續</button>'
+    +'<button id="resume-tap-home" style="width:100%;margin-top:8px;background:transparent;color:#888;border:none;padding:8px;font-size:13px;font-family:inherit;cursor:pointer">不用了，回首頁</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  document.getElementById('resume-tap-go').onclick=function(){
+    ov.remove();
+    var fn=typeof COMBO_STARTERS!=='undefined'&&COMBO_STARTERS[mode];
+    if(fn&&typeof window[fn]==='function')window[fn]();
+  };
+  document.getElementById('resume-tap-home').onclick=function(){
+    ov.remove();try{localStorage.removeItem(SESSION_KEY);}catch(e){}backHome();
+  };
 }
 
 const C42 = 2 * Math.PI * 42;
@@ -5419,6 +5468,8 @@ document.addEventListener('visibilitychange',function(){ if(document.visibilityS
 document.addEventListener('click',function(){ setTimeout(awakeSync,0); },true);
 document.addEventListener('touchend',function(){ setTimeout(awakeSync,0); },true);
 
+// 頁面重新載入後自動接回上次進度
+if(resumeSnap){setTimeout(function(){resumeSession(true);},300);}
 </script>
 
 <!-- ── 說明 & 免責聲明 Modal ── -->
