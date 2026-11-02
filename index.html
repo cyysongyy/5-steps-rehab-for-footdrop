@@ -810,7 +810,7 @@ const COMBO_META={
 };
 // 各模組預估所需分鐘數（對應首頁模組卡片上的時間標示），用於套餐總計時間估算
 const COMBO_EST_MIN={
-  lite:8, cool:5, warm:4, rehab:5, lumbar:5, bedlumbar:5, chest:10, band:10,
+  lite:9, cool:5, warm:4, rehab:5, lumbar:5, bedlumbar:5, chest:10, band:10,
   glute:5, footlift:1, gait:2, prop:10, foot:8, rgait:5, dbug:5, dorsi:3
 };
 function comboEstMin(keys){
@@ -1134,7 +1134,7 @@ function homeHTML(){
   <div class="mode-card" onclick="setMode('lite')" style="border-color:#0f766e;margin-bottom:12px">
     <div class="mode-icon" style="background:#ccfbf1;color:#0f766e"><i class="ti ti-bolt"></i></div>
     <div class="mode-text">
-      <span class="mode-badge" style="background:#ccfbf1;color:#134e4a">精簡版 ～8 分鐘</span>
+      <span class="mode-badge" style="background:#ccfbf1;color:#134e4a">精簡版 ～9 分鐘</span>
       <div class="mode-title">精簡版</div>
       <div class="mode-sub">10 個重點動作一次完成<br>腳掌抬起・左右擺動・拉筋・單腳站・點地・深蹲・慢步停・抱膝・橋式・死蟲</div>
     </div>
@@ -5150,12 +5150,12 @@ function closeInfoModal(e){
 // ══════════════════════════════
 const LTC='#0f766e',LTL='#ccfbf1',LTD='#134e4a';
 const LITE_EX=[
-  {id:'l1',title:'腳掌抬起',from:'腳掌抬起',badge:'約1分鐘',icon:'ti-arrow-big-up',
-   desc:'雙腳前腳掌向內旋轉，一腳前掌交疊在另一腳前掌上方，腳跟踩地。利用腳背力量將前腳掌撐起，停留 2～3 秒後慢慢放下。重複 10～15 次，完成後交換上下位置再做一次。',
-   tip:'感受出力的部位是腳背（脛前肌），不是靠腳趾抓地。',
+  {id:'l1',title:'腳掌抬起',from:'腳掌抬起',badge:'約1分30秒',icon:'ti-arrow-big-up',
+   desc:'雙腳前腳掌向內旋轉，一腳前掌交疊在另一腳前掌上方，腳跟踩地。利用腳背力量將前腳掌撐起，停留 2～3 秒，慢慢放下後再主動下壓，加強踝關節完整活動範圍。重複進行。',
+   tip:'感受出力的部位是腳背（脛前肌），下壓時改換小腿後側出力，動作放慢不急。',
    vc:{s:'精簡版開始。'+FOOTLIFT[0].spk.s,e:FOOTLIFT[0].spk.e},
-   cue:['抬起','一','二','三','四','五','停留','一','二','三','四','五','放下','一','二','三','四','五'],
-   img:()=>LIFT_IMGS.lift_a2, dur:69},
+   cue:['抬起','一','二','三','四','五','停留','一','二','三','四','五','放下','一','二','三','四','五','下壓','一','二','三','四','五'],
+   img:()=>LIFT_IMGS.lift_a2, dur:90},
   {id:'l2',title:'腳掌左右擺動',from:'腳掌靈活訓練・腳掌左右倒',badge:'左右各10次',icon:'ti-arrows-horizontal',
    desc:FOOT_EX[1].desc, tip:FOOT_EX[1].tip,
    vc:{s:FOOT_EX[1].vc.s,e:FOOT_EX[1].vc.e}, cue:FOOT_EX[1].cue,
