@@ -26,9 +26,13 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 .cbtn.sel{border-color:#111;transform:scale(1.03);box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .cbtn.dim{opacity:.45}
 .c-red{background:var(--red)}.c-blue{background:var(--blue)}.c-yellow{background:var(--yellow);color:#3a2b00}.c-green{background:var(--green)}
-.sig{background:#fff8e5;border-radius:14px;padding:12px;margin-top:12px;text-align:left}
-.sig b{font-size:18px}
-.sig img{display:block;max-width:100%;max-height:200px;margin:0 auto 8px;border-radius:12px;background:#3f281f}
+.sigs{margin-top:14px;text-align:left}
+.sigs h3{font-size:16px;margin:0 0 8px;text-align:center}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sc{background:#fff8e5;border-radius:12px;padding:8px;font-size:13px;line-height:1.4}
+.sc:last-child{grid-column:1/-1}
+.sc img{display:block;width:100%;height:96px;object-fit:contain;background:#3f281f;border-radius:8px;margin-bottom:6px}
+.sc b{font-size:15px;display:block}
 .go{width:100%;background:var(--pri);color:#fff;border:0;border-radius:16px;padding:16px;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit}
 .go:disabled{background:#c7c9d6}
 .hello{font-size:20px;font-weight:700;text-align:center;color:var(--pri);min-height:28px}
@@ -78,7 +82,7 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
     <h2 id="dTitle" style="margin:6px 0"></h2>
     <p id="dMsg" style="margin:0"></p>
     <ul class="tips" id="dTips"></ul>
-    <div class="sig" id="dSig"></div>
+    <div class="sigs"><h3>🌅 辰光五個手勢（全校共同訊號）</h3><div class="sgrid" id="dSig"></div></div>
     <p style="color:var(--mute);font-size:15px">你的老師會看到你的簽到，謝謝你誠實說出感受 💛</p>
     <button class="link" id="again">我的心情改變了，再簽一次</button>
   </div>
@@ -91,22 +95,25 @@ const GRADES = [1,2,3,4,5,6];
 const MAX_CLASS = 8;     // 每年級最多幾班
 const MAX_SEAT = 35;     // 無名單時的座號上限
 
+const SIGNALS = [
+  {img:'img/sig1.webp', name:'安靜手勢',   use:'看到這個手勢，全班停下聲音並看向老師。'},
+  {img:'img/sig2.webp', name:'我有話要說', use:'想發言或需要告訴老師事情時使用。'},
+  {img:'img/sig3.webp', name:'BTT',        use:'看到危險或不適當行為：退一步、想一想、告訴大人。'},
+  {img:'img/sig4.webp', name:'看著我',     use:'老師說 Eyes on me，你回 Eyes on you。'},
+  {img:'img/sig5.webp', name:'靜坐思考',   use:'需要安定心情時，安靜坐好。'}
+];
 const COLORS = {
   red:   {zh:'紅色', feel:'生氣', emoji:'😠', cls:'c-red',
           msg:'生氣是很正常的情緒，它在提醒你有事情讓你不舒服。',
-          sig:{img:'img/sig5.webp',em:'🧘',name:'靜坐思考',how:'坐穩、雙手放腿上，眼睛輕閉或看前方，深呼吸 5 次。'},
           tips:['做 5 次「汽球呼吸」：吸 4 秒、吐 6 秒','雙手用力握拳 5 秒，再慢慢放鬆','先離開現場喝口水，再決定要怎麼說','想找人聊聊，就告訴老師']},
   blue:  {zh:'藍色', feel:'沮喪', emoji:'😢', cls:'c-blue',
           msg:'難過、沮喪的時候，不用假裝沒事，你並不孤單。',
-          sig:{img:'img/sig2.webp',em:'☝️',name:'我有話要說',how:'舉手、伸出食指，安靜等待，告訴老師你的感受。'},
           tips:['把手放在胸口，深呼吸 3 次','對自己說：「我現在很難過，這是可以的」','找一位信任的人聊聊或抱一抱','做一件讓自己舒服的小事（畫畫、聽音樂）']},
   yellow:{zh:'黃色', feel:'焦慮', emoji:'😰', cls:'c-yellow',
           msg:'緊張、擔心是大腦在保護你，我們一起讓它慢下來。',
-          sig:{img:'img/sig3.webp',em:'↩️',name:'BTT（退一步·想一想·告訴大人）',how:'退一步 → 點點頭腦 → 張開手掌告訴老師你在擔心什麼。'},
           tips:['5-4-3-2-1：說出看到5樣、摸到4樣、聽到3樣東西','慢慢數到 10，再深呼吸','把擔心的事寫下來，交給老師一起想辦法','告訴自己：「一次只做一小步」']},
   green: {zh:'綠色', feel:'平和快樂', emoji:'😊', cls:'c-green',
           msg:'太棒了！記得感謝讓你開心的人事物。',
-          sig:{img:'img/sig4.webp',em:'👌',name:'看著我',how:'保持專注，把好心情用在學習和幫助別人。'},
           tips:['想一件今天讓你感恩的事','把好心情分享給身邊的同學','留意：是什麼讓你今天這麼好？']}
 };
 /* ====================================== */
@@ -186,7 +193,7 @@ async function submit(){
     const c = COLORS[state.color];
     $('dEmoji').textContent=c.emoji; $('dTitle').textContent=`你選了${c.zh}（${c.feel}）`; $('dMsg').textContent=c.msg;
     $('dTips').innerHTML = c.tips.map(t=>`<li>${t}</li>`).join('');
-    $('dSig').innerHTML = `<img src="${c.sig.img}" alt="${c.sig.name}"><b>辰光手勢小提醒：${c.sig.em} ${c.sig.name}</b><br>${c.sig.how}`;
+    $('dSig').innerHTML = SIGNALS.map((g,i)=>`<div class="sc"><img src="${g.img}" alt="${g.name}" loading="lazy"><b>${i+1}. ${g.name}</b>${g.use}</div>`).join('');
     $('formView').classList.add('hide'); $('doneView').classList.remove('hide'); window.scrollTo(0,0);
   }catch(e){ $('err').textContent='送出失敗，請檢查網路後再試一次。'; check(); }
 }
