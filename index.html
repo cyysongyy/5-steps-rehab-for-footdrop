@@ -599,7 +599,7 @@ function _gv(n){try{return (new Function('return '+n))();}catch(e){return undefi
 function _sv(n,v){try{(new Function('v',n+'=v'))(v);}catch(e){}}
 function saveSession(force){
   if(typeof mode==='undefined')return;
-  if(mode==='home'){
+  if(mode==='home'||mode==='log'){
     if(resumeSnap&&!force)return;           // 還沒決定要不要接續，先保留舊紀錄
     if(!resumeSnap){try{localStorage.removeItem(SESSION_KEY);}catch(e){}}
     return;
@@ -1032,6 +1032,7 @@ function render(){
   pauseUiSync();
   saveSession();
   if(mode==='home'){app.innerHTML=homeHTML();return;}
+  if(mode==='log'){app.innerHTML=logHTML();return;}
   if(mode==='lite'){app.innerHTML=liteHTML();return;}
   if(mode==='cool'){app.innerHTML=coolHTML();return;}
   if(mode==='warm'){app.innerHTML=warmHTML();return;}
@@ -1130,6 +1131,7 @@ function homeHTML(){
     </button>
   </div>
   ${resumeBannerHTML()}
+  ${logCardHTML()}
   ${comboBoxHTML()}
   <div class="mode-card" onclick="setMode('lite')" style="border-color:#0f766e;margin-bottom:12px">
     <div class="mode-icon" style="background:#ccfbf1;color:#0f766e"><i class="ti ti-bolt"></i></div>
@@ -5746,6 +5748,208 @@ function coolFinish(){
 </div>`;
 }
 
+
+// ══════════════════════════════════════════
+//  復健打卡與進度紀錄（自動記錄 + 月曆 + 疼痛 + 匯出）
+//  資料只存在本機 localStorage，不上傳任何資料
+// ══════════════════════════════════════════
+var LOG_KEY='rehabLog_v1';
+var LOG_FN={
+  wFinish:'足部暖身運動', finishAll:'垂足背屈復健訓練', finishLumbar:'腰椎復健運動',
+  finishBedLumbar:'臥姿腰椎復健', finishChest:'擴胸運動', bandFinishAll:'彈力帶訓練',
+  gFinish:'臀部啟動訓練', gaitFinish:'步態平衡訓練', propFinish:'本體覺訓練',
+  footFinish:'腳掌靈活訓練', rgaitFinish:'右腳正常步態訓練', dbugFinish:'死蟲式核心訓練',
+  dorsiFinish:'腳掌背屈運動', liteFinish:'精簡版', coolFinish:'走路收操'
+};
+var logData=null;
+var logView={y:0,m:0,sel:''};
+var logLastAdd={};
+
+function logPad(n){return n<10?'0'+n:''+n;}
+function logYmd(d){return d.getFullYear()+'-'+logPad(d.getMonth()+1)+'-'+logPad(d.getDate());}
+function logEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function logLoad(){
+  if(logData)return logData;
+  try{var r=JSON.parse(localStorage.getItem(LOG_KEY)||'null');if(r&&r.days)logData=r;}catch(e){}
+  if(!logData)logData={days:{}};
+  return logData;
+}
+function logSave(){try{localStorage.setItem(LOG_KEY,JSON.stringify(logLoad()));}catch(e){}}
+function logDay(ymd,create){
+  var d=logLoad().days;
+  if(!d[ymd]&&create)d[ymd]={s:[],pain:null,note:''};
+  return d[ymd]||null;
+}
+function logAdd(name,when){
+  var now=when||Date.now();
+  if(!when){ // 同一動作 20 秒內只記一次，避免按鈕與計時器重複觸發
+    if(logLastAdd[name]&&now-logLastAdd[name]<20000)return;
+    logLastAdd[name]=now;
+  }
+  var day=logDay(logYmd(new Date(now)),true);
+  day.s.push({t:now,n:name});
+  logSave();
+}
+function logCount(ymd){var d=logLoad().days[ymd];return d?d.s.length:0;}
+function logStreak(){
+  var d=new Date();
+  if(!logCount(logYmd(d)))d.setDate(d.getDate()-1); // 今天還沒練，從昨天起算，不會歸零
+  var n=0;
+  while(logCount(logYmd(d))>0){n++;d.setDate(d.getDate()-1);}
+  return n;
+}
+function logDaysIn(y,m){ // 該月有練習的天數
+  var n=0,days=logLoad().days,p=y+'-'+logPad(m+1)+'-';
+  Object.keys(days).forEach(function(k){if(k.indexOf(p)===0&&days[k].s.length>0)n++;});
+  return n;
+}
+function logLast7(){
+  var out=[],d=new Date();
+  for(var i=6;i>=0;i--){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()-i);out.push({ymd:logYmd(x),w:'日一二三四五六'.charAt(x.getDay()),c:logCount(logYmd(x))});}
+  return out;
+}
+
+// ── 首頁卡片 ──
+function logCardHTML(){
+  var today=logCount(logYmd(new Date())),st=logStreak();
+  var sub=today>0?('今天已完成 <strong>'+today+'</strong> 項訓練 ✅'):'今天還沒訓練，完成後會自動打卡';
+  return '<div class="mode-card" onclick="openLog()" style="border-color:#d97706;margin-bottom:12px">'
+    +'<div class="mode-icon" style="background:#fef3c7;color:#b45309"><i class="ti ti-calendar-stats"></i></div>'
+    +'<div class="mode-text"><span class="mode-badge" style="background:#fef3c7;color:#b45309">進度紀錄</span>'
+    +'<div class="mode-title">復健打卡 🔥 連續 '+st+' 天</div>'
+    +'<div class="mode-sub">'+sub+'<br>月曆・疼痛紀錄・匯出給治療師</div></div></div>';
+}
+function openLog(){
+  var n=new Date();
+  logView={y:n.getFullYear(),m:n.getMonth(),sel:logYmd(n)};
+  mode='log';render();
+}
+
+// ── 紀錄頁 ──
+function logHTML(){
+  var days=logLoad().days,y=logView.y,m=logView.m,sel=logView.sel,today=logYmd(new Date());
+  var first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate(),cells='';
+  var wk='日一二三四五六'.split('').map(function(w){return '<div style="font-size:11px;color:var(--tx3);text-align:center;padding:4px 0">'+w+'</div>';}).join('');
+  for(var i=0;i<first;i++)cells+='<div></div>';
+  for(var d=1;d<=dim;d++){
+    var k=y+'-'+logPad(m+1)+'-'+logPad(d),c=logCount(k),isSel=k===sel,isToday=k===today;
+    var bg=c>0?'#1D9E75':'transparent',fg=c>0?'#fff':'var(--tx)';
+    var bd=isSel?'2px solid #d97706':(isToday?'1.5px solid var(--br2)':'1.5px solid transparent');
+    cells+='<button onclick="logSel(\''+k+'\')" style="aspect-ratio:1;border-radius:50%;border:'+bd+';background:'+bg+';color:'+fg+';font-size:13px;font-weight:'+(c>0?'700':'500')+';font-family:inherit;cursor:pointer;padding:0">'+d+'</button>';
+  }
+  var l7=logLast7(),mx=Math.max.apply(null,l7.map(function(x){return x.c;}).concat([1]));
+  var bars=l7.map(function(x){
+    var h=Math.round(x.c/mx*48);
+    return '<div style="flex:1;text-align:center"><div style="height:52px;display:flex;align-items:flex-end;justify-content:center"><div style="width:60%;height:'+Math.max(h,x.c>0?6:2)+'px;border-radius:4px;background:'+(x.c>0?'#1D9E75':'var(--br)')+'"></div></div>'
+      +'<div style="font-size:10.5px;color:var(--tx3);margin-top:3px">'+x.w+'</div><div style="font-size:11px;font-weight:700;color:var(--tx2)">'+(x.c||'')+'</div></div>';
+  }).join('');
+  var rec=days[sel]||{s:[],pain:null,note:''};
+  var list=rec.s.length?rec.s.map(function(e,i){
+    var t=new Date(e.t);
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--br);font-size:13.5px"><span style="color:var(--tx3);font-family:\'DM Mono\',monospace;font-size:12px">'+logPad(t.getHours())+':'+logPad(t.getMinutes())+'</span><span style="flex:1">'+logEsc(e.n)+'</span>'
+      +'<button onclick="logDel('+i+')" title="刪除" style="background:none;border:none;color:var(--tx3);font-size:16px;cursor:pointer;padding:2px 6px">✕</button></div>';
+  }).join(''):'<div style="color:var(--tx3);font-size:13px;padding:8px 0">這天沒有紀錄</div>';
+  var pains='';
+  for(var p=0;p<=10;p++){
+    var on=rec.pain===p;
+    pains+='<button onclick="logPain('+p+')" style="flex:1;min-width:0;padding:8px 0;border-radius:8px;border:1.5px solid '+(on?'#d97706':'var(--br)')+';background:'+(on?'#fef3c7':'var(--bg)')+';color:'+(on?'#92400e':'var(--tx2)')+';font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">'+p+'</button>';
+  }
+  var selLabel=sel.replace(/^(\d+)-(\d+)-(\d+)$/,function(_,a,b,c){return Number(b)+' 月 '+Number(c)+' 日';});
+  var tile=function(v,l){return '<div style="flex:1;background:var(--bg2);border-radius:12px;padding:12px 6px;text-align:center"><div style="font-size:24px;font-weight:800;color:var(--td)">'+v+'</div><div style="font-size:11.5px;color:var(--tx2);margin-top:2px">'+l+'</div></div>';};
+  var navBtn='background:var(--bg2);border:none;border-radius:8px;width:34px;height:34px;font-size:16px;color:var(--tx);cursor:pointer;font-family:inherit';
+  return '<div class="hdr"><button class="hdr-back" onclick="backHome()"><i class="ti ti-arrow-left" style="font-size:15px"></i></button>'
+    +'<div class="hic" style="background:#fef3c7"><i class="ti ti-calendar-stats" style="font-size:18px;color:#b45309"></i></div>'
+    +'<div class="htx"><h1>復健打卡紀錄</h1><p>完成訓練會自動記錄</p></div></div>'
+    +'<div class="card"><div class="cbody">'
+    +'<div style="display:flex;gap:8px;margin-bottom:14px">'+tile(logStreak(),'🔥 連續天數')+tile(l7.filter(function(x){return x.c>0;}).length,'近 7 天練了')+tile(logDaysIn(y,m),'本月天數')+'</div>'
+    +'<div style="display:flex;gap:4px;margin-bottom:6px">'+bars+'</div>'
+    +'</div></div>'
+    +'<div class="card"><div class="cbody">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><button onclick="logMonth(-1)" style="'+navBtn+'">‹</button><div style="font-weight:800;font-size:15px">'+y+' 年 '+(m+1)+' 月</div><button onclick="logMonth(1)" style="'+navBtn+'">›</button></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">'+wk+cells+'</div>'
+    +'</div></div>'
+    +'<div class="card"><div class="cbody">'
+    +'<div style="font-weight:800;font-size:15px;margin-bottom:6px">'+selLabel+'</div>'+list
+    +'<button onclick="logManual()" style="margin-top:8px;width:100%;padding:9px;border-radius:10px;border:1.5px dashed var(--br2);background:transparent;color:var(--tx2);font-size:13px;font-family:inherit;cursor:pointer">＋ 手動補記一次訓練</button>'
+    +'<div style="font-weight:700;font-size:13.5px;margin:16px 0 6px">今日疼痛程度 <span style="font-weight:400;color:var(--tx3);font-size:12px">0 無痛 ～ 10 劇痛（再點一次取消）</span></div>'
+    +'<div style="display:flex;gap:4px">'+pains+'</div>'
+    +'<div style="font-weight:700;font-size:13.5px;margin:14px 0 6px">備註</div>'
+    +'<textarea id="log-note" oninput="logNote(this.value)" placeholder="例如：腳背比較有力、走路 8000 步、膝蓋不舒服…" style="width:100%;min-height:70px;border:1.5px solid var(--br);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--tx);resize:vertical">'+logEsc(rec.note)+'</textarea>'
+    +'</div></div>'
+    +'<div class="card"><div class="cbody">'
+    +'<div style="font-weight:800;font-size:15px;margin-bottom:8px">匯出給治療師／醫師</div>'
+    +'<div style="display:flex;gap:8px"><button onclick="logCopy()" style="flex:1;padding:11px;border-radius:10px;border:none;background:#1D9E75;color:#fff;font-weight:700;font-size:14px;font-family:inherit;cursor:pointer">📋 複製近 30 天摘要</button>'
+    +'<button onclick="logCsv()" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid #1D9E75;background:transparent;color:var(--td);font-weight:700;font-size:14px;font-family:inherit;cursor:pointer">⬇ 下載 CSV</button></div>'
+    +'<div id="log-msg" style="font-size:12.5px;color:var(--td);min-height:18px;margin-top:8px"></div>'
+    +'<p style="font-size:11.5px;color:var(--tx3);line-height:1.6;margin-top:4px">紀錄只存在這支手機的瀏覽器裡，不會上傳。清除瀏覽器資料或換手機會遺失，建議定期匯出備份。</p>'
+    +'<button onclick="logClear()" style="margin-top:8px;background:none;border:none;color:var(--red);font-size:12.5px;font-family:inherit;cursor:pointer;padding:4px 0">清除全部紀錄</button>'
+    +'</div></div>';
+}
+function logSel(k){logView.sel=k;render();}
+function logMonth(dm){
+  var d=new Date(logView.y,logView.m+dm,1);
+  logView.y=d.getFullYear();logView.m=d.getMonth();render();
+}
+function logPain(v){
+  var r=logDay(logView.sel,true);r.pain=(r.pain===v)?null:v;logSave();render();
+}
+function logNote(v){var r=logDay(logView.sel,true);r.note=v;logSave();}
+function logDel(i){
+  var r=logDay(logView.sel,false);if(!r)return;
+  r.s.splice(i,1);
+  if(!r.s.length&&r.pain===null&&!r.note)delete logLoad().days[logView.sel];
+  logSave();render();
+}
+function logManual(){
+  var name=prompt('補記哪一項訓練？（例如：足部暖身運動）','復健訓練');
+  if(!name)return;
+  var p=logView.sel.split('-'),now=new Date();
+  var t=new Date(+p[0],+p[1]-1,+p[2],now.getHours(),now.getMinutes()).getTime();
+  logAdd(name.slice(0,30),t);render();
+}
+function logMsg(t){var e=document.getElementById('log-msg');if(e)e.textContent=t;}
+function logSummary(){
+  var days=logLoad().days,out=['復健紀錄（近 30 天）','日期｜完成次數｜疼痛(0-10)｜備註'],n=0,tot=0,d=new Date();
+  for(var i=29;i>=0;i--){
+    var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()-i),k=logYmd(x),r=days[k];
+    if(!r)continue;
+    out.push(k+'｜'+r.s.length+'｜'+(r.pain===null?'-':r.pain)+'｜'+(r.note||'').replace(/\s+/g,' '));
+    if(r.s.length>0){n++;tot+=r.s.length;}
+  }
+  out.splice(2,0,'共練習 '+n+' 天、'+tot+' 項訓練；目前連續 '+logStreak()+' 天');
+  return out.join('\n');
+}
+function logCopy(){
+  var t=logSummary();
+  function fb(){var a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();try{document.execCommand('copy');logMsg('已複製，可貼到 LINE 或訊息給治療師');}catch(e){logMsg('複製失敗，請改用下載 CSV');}a.remove();}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){logMsg('已複製，可貼到 LINE 或訊息給治療師');},fb);}else fb();
+}
+function logCsv(){
+  var days=logLoad().days,rows=['日期,時間,訓練項目,疼痛(0-10),備註'];
+  Object.keys(days).sort().forEach(function(k){
+    var r=days[k],q=function(s){return '"'+String(s==null?'':s).replace(/"/g,'""')+'"';};
+    if(!r.s.length)rows.push([k,'','',r.pain===null?'':r.pain,q(r.note)].join(','));
+    r.s.forEach(function(e,i){var t=new Date(e.t);rows.push([k,logPad(t.getHours())+':'+logPad(t.getMinutes()),q(e.n),i===0&&r.pain!==null?r.pain:'',i===0?q(r.note):''].join(','));});
+  });
+  var blob=new Blob(['﻿'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='復健紀錄_'+logYmd(new Date())+'.csv';
+  document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+  logMsg('已下載 CSV');
+}
+function logClear(){
+  if(!confirm('確定要清除全部復健紀錄嗎？此動作無法復原。'))return;
+  logData={days:{}};logSave();render();
+}
+
+// ── 掛上自動打卡：每個訓練模組完成時記一筆 ──
+Object.keys(LOG_FN).forEach(function(fn){
+  var orig=window[fn];
+  if(typeof orig!=='function')return;
+  window[fn]=function(){
+    try{logAdd(LOG_FN[fn]);}catch(e){}
+    return orig.apply(this,arguments);
+  };
+});
 </script>
 
 <!-- ── 說明 & 免責聲明 Modal ── -->
