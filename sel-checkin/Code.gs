@@ -284,13 +284,15 @@ function doPost(e) {
       if (!av || /[A-Za-z0-9<>&"'\s]/.test(av)) return out_({ ok: false, error: 'bad avatar' });
       var rsh = sheet_('Roster'), rv = rsh.getDataRange().getValues(), col = rv[0].indexOf('圖案');
       if (col < 0) { col = rv[0].length; rsh.getRange(1, col + 1).setValue('圖案'); }
+      var target = -1;
       for (var j = 1; j < rv.length; j++) {
-        if (String(rv[j][0]) === String(b.cls) && Number(rv[j][1]) === Number(b.seat)) {
-          rsh.getRange(j + 1, col + 1).setValue(av);
-          return out_({ ok: true });
-        }
+        if (String(rv[j][0]) !== String(b.cls)) continue;
+        if (Number(rv[j][1]) === Number(b.seat)) { target = j; }
+        else if (String(rv[j][col] || '') === av) return out_({ ok: false, error: 'taken' });   // 同班同學已選走，每個圖案只能一人使用
       }
-      return out_({ ok: false, error: 'not in roster' });
+      if (target < 0) return out_({ ok: false, error: 'not in roster' });
+      rsh.getRange(target + 1, col + 1).setValue(av);
+      return out_({ ok: true });
     }
     var acc = access_(b.pass);
     if (!acc) return out_({ ok: false, error: 'auth' });
