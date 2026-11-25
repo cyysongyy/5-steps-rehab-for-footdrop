@@ -27,21 +27,25 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 .tile.sel{border-color:var(--pri);background:#eef2ff;transform:scale(1.04)}
 .tile.done::after{content:"✓ 今天已簽到";position:absolute;left:0;right:0;bottom:-1px;font-size:11px;color:#047857;background:#d1fae5;border-radius:0 0 12px 12px}
 .tile.done{padding-bottom:20px}
-.tile .av{display:block;font-size:34px;line-height:1.15}
+.tile .av{display:flex;width:48px;height:48px;margin:0 auto 2px;border-radius:50%;align-items:center;justify-content:center;font-size:29px;line-height:1;background:var(--abg,#FFF4C7)}
+.avc{display:inline-flex;width:34px;height:34px;border-radius:50%;align-items:center;justify-content:center;font-size:21px;vertical-align:middle;background:var(--abg,#FFF4C7)}
 .tile .no{font-size:20px}
 .apick{background:#fff8e5;border-radius:14px;padding:10px;margin-top:10px}
 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;margin-top:8px}
-.agrid button{font-size:30px;background:#fff;border:3px solid transparent;border-radius:12px;padding:4px;cursor:pointer}
+.agrid button{font-size:30px;line-height:1;background:var(--abg,#fff);border:3px solid transparent;border-radius:50%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .agrid button.sel{border-color:var(--pri)}
 .hello{font-size:20px;font-weight:700;text-align:center;color:var(--pri);min-height:28px;margin-top:10px}
 /* 情緒卡片：柔和粉彩＋向量臉譜（faces.js） */
 .egrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ecard{position:relative;display:flex;align-items:center;gap:8px;text-align:left;border:3px solid transparent;border-radius:20px;padding:11px 8px;background:var(--bg);cursor:pointer;font-family:inherit;transition:transform .12s,box-shadow .12s}
 .ecard b{display:block;font-size:17px;color:var(--fg);line-height:1.25;white-space:nowrap}
-.ecard small{display:block;font-size:12px;color:var(--st);line-height:1.35;margin-top:2px}
+.ecard small{display:block;font-size:12px;color:var(--fg);opacity:.85;line-height:1.35;margin-top:2px}
 .ecard.sel{border-color:var(--st);box-shadow:0 5px 16px rgba(0,0,0,.14);transform:scale(1.025)}
 .ecard.sel::after{content:"✓";position:absolute;top:-8px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--st);color:#fff;font-size:14px;line-height:24px;text-align:center;font-weight:700}
-.ecard.dim{opacity:.55}
+.ecard.dim{opacity:.72}
+.egrid.big .ecard{flex-direction:column;text-align:center;padding:16px 8px 14px;gap:6px}
+.egrid.big .ecard b{font-size:21px}
+.egrid.big .ecard small{font-size:13.5px}
 .tier{grid-column:1/-1;text-align:center;font-size:13px;color:var(--mute);margin:8px 0 0}
 .egrid-note{text-align:center;color:var(--mute);font-size:13px;margin-top:12px}
 .bigface{display:flex;justify-content:center}
@@ -155,6 +159,9 @@ const tierOf = g => g<=2 ? 1 : g<=4 ? 2 : 3;
 const AVATARS = ['🐶','🐱','🐰','🐻','🐼','🦊','🐯','🦁','🐸','🐵','🐧','🐤','🦄','🐢','🐬','🐙','🦋','🐞','🐳','🦖',
   '🍎','🍓','🍉','🍌','🍪','🍩','🍕','🍦','🌈','⭐','🌙','☀️','🌸','🌻','🌲','🍀','⚽','🏀','🎨','🎵','🚀','🚗','🎈','🎁','💛','💙','💚','❤️'];
 
+const ABG = ['#FFE3E0','#E3EDFF','#FFF4C7','#E4F8EB','#F1E4FF','#FFE8D1'];   // 頭像底圈的柔和色
+const abg = (i) => ABG[(i||0) % ABG.length];
+
 /* 辰光五手勢（全校共同訊號，圖片放在 img/） */
 const SIGNALS = [
   {img:'img/sig1.webp', name:'安靜手勢',   use:'看到這個手勢，全班停下聲音並看向老師。'},
@@ -231,14 +238,14 @@ async function loadClass(){
 function renderTiles(){
   if (!state.roster.length){ $('tiles').innerHTML='<div class="sub">這個班級還沒有名單，請老師先匯入。</div>'; return; }
   $('tiles').innerHTML = state.roster.map(r=>
-    `<button class="tile ${state.done.includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}">${r.avatar?`<span class="av">${esc(r.avatar)}</span>`:''}<span class="no">${r.seat}</span><span class="nm">號</span></button>`).join('');
+    `<button class="tile ${state.done.includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}">${r.avatar?`<span class="av" style="--abg:${abg(r.seat)}">${esc(r.avatar)}</span>`:''}<span class="no">${r.seat}</span><span class="nm">號</span></button>`).join('');
   $('tiles').onclick = e => { const b=e.target.closest('.tile'); if(!b) return;
     state.seat=+b.dataset.s;
     showHello(); renderTiles(); $('emotions').scrollIntoView({behavior:'smooth',block:'nearest'}); check(); };
 }
 function showHello(){
   const me = state.roster.find(r=>r.seat===state.seat)||{};
-  $('hello').innerHTML = `${me.avatar?esc(me.avatar)+' ':''}你選了 ${state.seat} 號 ` + (me.avatar?'<button class="link" id="chAv">🎨 換圖案</button>':'');
+  $('hello').innerHTML = `${me.avatar?`<span class="avc" style="--abg:${abg(me.seat)}">${esc(me.avatar)}</span> `:''}你選了 ${state.seat} 號 ` + (me.avatar?'<button class="link" id="chAv">🎨 換圖案</button>':'');
   const needPick = !me.avatar;
   $('apick').classList.toggle('hide', !needPick);
   if (needPick) renderAvatars();
@@ -246,7 +253,7 @@ function showHello(){
 }
 function renderAvatars(){
   const me = state.roster.find(r=>r.seat===state.seat)||{};
-  $('agrid').innerHTML = AVATARS.map(a=>`<button data-a="${a}" class="${me.avatar===a?'sel':''}">${a}</button>`).join('');
+  $('agrid').innerHTML = AVATARS.map((a,i)=>`<button data-a="${a}" style="--abg:${abg(i)}" class="${me.avatar===a?'sel':''}">${a}</button>`).join('');
   $('agrid').onclick = async e => { const b=e.target.closest('button'); if(!b) return;
     const av=b.dataset.a, seat=state.seat;
     try{ const r = await api('setAvatar',{cls:state.cls, seat, avatar:av}); if(!r.ok) throw 0;
@@ -257,10 +264,10 @@ function renderEmotions(){
   if (!state.grade){ $('emotions').innerHTML='<div class="sub">先選好年級</div>'; return; }
   const t = tierOf(state.grade), label = {2:'再多一點的心情', 3:'更細緻的心情'};
   const card = e => { const z=SELFaces.ZONE[e.color], f=SELFaces.FACES[e.name];
-    return `<button class="ecard" data-n="${e.name}" style="--bg:${z.card};--fg:${z.text};--st:${z.stroke}">${SELFaces.svg(e.name,50)}<span><b>${e.name}</b><small>${f.desc}</small></span></button>`; };
+    return `<button class="ecard" data-n="${e.name}" style="--bg:${z.card};--fg:${z.text};--st:${z.stroke}">${SELFaces.svg(e.name,t===1?84:52)}<span><b>${e.name}</b><small>${f.desc}</small></span></button>`; };
   let h='';
   for (let k=1;k<=t;k++){ if (label[k]) h+=`<div class="tier">${label[k]}</div>`; h+=EMOTIONS.filter(e=>e.tier===k).map(card).join(''); }
-  $('emotions').innerHTML = `<div class="egrid">${h}</div><div class="egrid-note">每一種心情，都可以在這裡安心停留。</div>`;
+  $('emotions').innerHTML = `<div class="egrid ${t===1?'big':''}">${h}</div><div class="egrid-note">每一種心情，都可以在這裡安心停留。</div>`;
   $('emotions').onclick = e => { const b=e.target.closest('.ecard'); if(!b) return;
     state.emo = EMOTIONS.find(x=>x.name===b.dataset.n);
     document.querySelectorAll('.ecard').forEach(x=>{x.classList.toggle('sel',x===b); x.classList.toggle('dim',x!==b);}); check(); };
