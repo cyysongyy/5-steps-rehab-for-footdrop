@@ -183,7 +183,7 @@ function latest(){
   return [...seats].sort((a,b)=>a-b).map(seat=>{
     const r=data.roster.find(x=>x.seat===seat), c=m[seat];
     const pr=c?COLOR[c.color].p:-1;
-    return {seat,name:(r&&r.name)||(c&&c.name)||'',c,pr,fu:fu[seat]};
+    return {seat,name:(r&&r.name)||(c&&c.name)||'',avatar:(r&&r.avatar)||'',c,pr,fu:fu[seat]};
   });
 }
 function render(){
@@ -202,7 +202,7 @@ function render(){
     const col=s.c?s.c.color:'';
     return `<div class="s ${col} ${s.c&&s.c.color==='red'&&!s.fu?'urgent':''}" data-seat="${s.seat}">
       ${s.c&&s.c.note?'<span class="badge">💬</span>':''}
-      <div class="top"><span>${s.seat}號</span><span>${esc(s.name)}</span></div>
+      <div class="top"><span>${esc(s.avatar)} ${s.seat}號</span><span>${esc(s.name)}</span></div>
       <div class="g">${s.c?COLOR[col].zh+'<br>'+esc(s.c.emotion||''):'<span class="mute">尚未簽到</span>'}</div>
       ${s.c&&s.c.note?`<div class="n">${esc(s.c.note)}</div>`:''}
       ${s.fu?`<div class="st">✓ ${esc(s.fu.status)}</div>`:''}</div>`}).join('')||'<div class="mute">沒有符合的學生</div>';

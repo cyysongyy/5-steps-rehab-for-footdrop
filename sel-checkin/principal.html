@@ -154,7 +154,7 @@ function render(){
   $('classes').onclick=e=>{const c=e.target.closest('.cc');if(c){openCls=openCls===c.dataset.c?'':c.dataset.c;render()}};
   const oc=data.classes.find(c=>c.cls===openCls);
   $('detail').innerHTML=oc?`<div class="detail"><b>${clsLabel(oc.cls)}（${esc($('date').value)}）</b><table><tr><th>座號</th><th>姓名</th><th>情緒</th><th>留言</th><th>處遇</th></tr>`+
-    oc.students.map(s=>`<tr><td>${s.seat}</td><td>${esc(s.name)}</td><td>${s.color?`<span class="dot ${s.color}"></span>${esc(s.emotion||COLOR[s.color])}`:'<span class="mute">未簽到</span>'}</td><td>${esc(s.note||'')}</td><td>${s.fu?esc(s.fu.status)+(s.fu.note?'：'+esc(s.fu.note):''):''}</td></tr>`).join('')+'</table></div>':'';
+    oc.students.map(s=>`<tr><td>${esc(s.avatar||'')} ${s.seat}</td><td>${esc(s.name)}</td><td>${s.color?`<span class="dot ${s.color}"></span>${esc(s.emotion||COLOR[s.color])}`:'<span class="mute">未簽到</span>'}</td><td>${esc(s.note||'')}</td><td>${s.fu?esc(s.fu.status)+(s.fu.note?'：'+esc(s.fu.note):''):''}</td></tr>`).join('')+'</table></div>':'';
   $('meta').textContent=`${$('date').value} · 更新 ${new Date().toTimeString().slice(0,5)} · 每分鐘自動更新`;
 }
 function exportCsv(){

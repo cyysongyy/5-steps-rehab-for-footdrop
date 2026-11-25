@@ -7,14 +7,14 @@
  *
  * 工作表（首次執行自動建立）：
  *   Checkins  : id, 時間, 日期, 班級, 座號, 姓名, 顏色, 情緒, 備註
- *   Roster    : 班級（例：3甲）, 座號, 姓名  ← 名單放這裡，用 RosterSeed.gs 一次匯入
+ *   Roster    : 班級（例：3甲）, 座號, 姓名, 圖案  ← 名單放這裡，用 RosterSeed.gs 一次匯入；「圖案」由學生自選（自我圖式）
  *   Teachers  : 班級, 教師, 密碼   ← 老師登入用；同一位老師帶多班就多列、用同一組密碼
  *   Followups : 時間, 日期, 班級, 座號, 姓名, 狀態, 處遇紀錄, 教師
  */
 var COLORS = ['red', 'blue', 'yellow', 'green'];
 var SHEETS = {
   Checkins: ['id', '時間', '日期', '班級', '座號', '姓名', '顏色', '情緒', '備註'],
-  Roster: ['班級', '座號', '姓名'],
+  Roster: ['班級', '座號', '姓名', '圖案'],
   Teachers: ['班級', '教師', '密碼'],
   Followups: ['時間', '日期', '班級', '座號', '姓名', '狀態', '處遇紀錄', '教師']
 };
@@ -74,7 +74,7 @@ function doGet(e) {
     // 學生端：只提供座號（不含姓名），姓名僅後端與校長/教師可見
     if (a === 'roster') {
       var list = rows_('Roster').filter(function (r) { return String(r['班級']) === String(p.cls); })
-              .map(function (r) { return { seat: Number(r['座號']) }; });
+              .map(function (r) { return { seat: Number(r['座號']), avatar: String(r['圖案'] || '') }; });
       // 只回傳今天已簽到的座號（不含顏色），讓班級圖卡顯示 ✓
       var d0 = today_();
       var done = rows_('Checkins').filter(function (r) {
@@ -231,7 +231,7 @@ function overview_(d) {
   rows_('Roster').forEach(function (r) {
     var c = String(r['班級']);
     if (!classes[c]) { classes[c] = { cls: c, students: {} }; order.push(c); }
-    classes[c].students[Number(r['座號'])] = { seat: Number(r['座號']), name: r['姓名'] };
+    classes[c].students[Number(r['座號'])] = { seat: Number(r['座號']), name: r['姓名'], avatar: String(r['圖案'] || '') };
   });
   rows_('Checkins').forEach(function (r) {
     if (dateStr_(r['日期']) !== d) return;
@@ -260,7 +260,7 @@ function overview_(d) {
 
 function rosterOf_(cls) {
   return rows_('Roster').filter(function (r) { return String(r['班級']) === String(cls); })
-    .map(function (r) { return { seat: Number(r['座號']), name: r['姓名'] }; });
+    .map(function (r) { return { seat: Number(r['座號']), name: r['姓名'], avatar: String(r['圖案'] || '') }; });
 }
 
 // 前端以 text/plain 傳 JSON，避免 CORS 預檢
@@ -278,14 +278,28 @@ function doPost(e) {
         b.color, str_(b.emotion, 30), str_(b.note, 200)]);
       return out_({ ok: true });
     }
+    if (a === 'setAvatar') {   // 學生自選圖案（自我圖式）
+      var av = str_(b.avatar, 8);
+      if (!av || /[A-Za-z0-9<>&"'\s]/.test(av)) return out_({ ok: false, error: 'bad avatar' });
+      var rsh = sheet_('Roster'), rv = rsh.getDataRange().getValues(), col = rv[0].indexOf('圖案');
+      if (col < 0) { col = rv[0].length; rsh.getRange(1, col + 1).setValue('圖案'); }
+      for (var j = 1; j < rv.length; j++) {
+        if (String(rv[j][0]) === String(b.cls) && Number(rv[j][1]) === Number(b.seat)) {
+          rsh.getRange(j + 1, col + 1).setValue(av);
+          return out_({ ok: true });
+        }
+      }
+      return out_({ ok: false, error: 'not in roster' });
+    }
     var acc = access_(b.pass);
     if (!acc) return out_({ ok: false, error: 'auth' });
     if (!can_(acc, b.cls)) return out_({ ok: false, error: 'forbidden' });
     if (a === 'saveRoster') {
       var sh = sheet_('Roster');
       var all = sh.getDataRange().getValues();
-      for (var i = all.length - 1; i >= 1; i--) if (String(all[i][0]) === String(b.cls)) sh.deleteRow(i + 1);
-      (b.roster || []).forEach(function (r) { sh.appendRow([str_(b.cls, 10), Number(r.seat), str_(r.name, 20)]); });
+      var keep = {};   // 重存名單時保留學生已選的圖案
+      for (var i = all.length - 1; i >= 1; i--) if (String(all[i][0]) === String(b.cls)) { keep[Number(all[i][1])] = all[i][3] || ''; sh.deleteRow(i + 1); }
+      (b.roster || []).forEach(function (r) { sh.appendRow([str_(b.cls, 10), Number(r.seat), str_(r.name, 20), keep[Number(r.seat)] || '']); });
       return out_({ ok: true });
     }
     if (a === 'followup') {
