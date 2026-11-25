@@ -1,0 +1,317 @@
+/**
+ * SEL 情緒簽到 — Google Apps Script 後端
+ * 部署：Google Sheets → 擴充功能 → Apps Script → 貼上本檔
+ *      → 專案設定 → 指令碼屬性 新增 PRINCIPAL_PASSCODE（校長密碼，可看全校）
+ *      → 試算表 Teachers 分頁：每班一列「班級（例：3甲）、教師、密碼」，老師只看得到自己的班
+ *      → 部署 → 新增部署 → 網頁應用程式 → 執行身分：我；存取：任何人 → 複製網址
+ *
+ * 工作表（首次執行自動建立）：
+ *   Checkins  : id, 時間, 日期, 班級, 座號, 姓名, 顏色, 情緒, 備註
+ *   Roster    : 班級（例：3甲）, 座號, 姓名, 圖案  ← 名單放這裡，用 RosterSeed.gs 一次匯入；「圖案」由學生自選（自我圖式）
+ *   Teachers  : 班級, 教師, 密碼   ← 老師登入用；同一位老師帶多班就多列、用同一組密碼
+ *   Followups : 時間, 日期, 班級, 座號, 姓名, 狀態, 處遇紀錄, 教師
+ */
+var COLORS = ['red', 'blue', 'yellow', 'green'];
+var SHEETS = {
+  Checkins: ['id', '時間', '日期', '班級', '座號', '姓名', '顏色', '情緒', '備註'],
+  Roster: ['班級', '座號', '姓名', '圖案'],
+  Teachers: ['班級', '教師', '密碼'],
+  Followups: ['時間', '日期', '班級', '座號', '姓名', '狀態', '處遇紀錄', '教師']
+};
+
+function sheet_(name) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.appendRow(SHEETS[name]);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+function rows_(name) {
+  var v = sheet_(name).getDataRange().getValues();
+  var head = v.shift();
+  return v.map(function (r) {
+    var o = {};
+    head.forEach(function (h, i) { o[h] = r[i]; });
+    return o;
+  });
+}
+function today_() { return Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd'); }
+function now_() { return Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd HH:mm:ss'); }
+function out_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+// 權限：校長密碼（指令碼屬性 PRINCIPAL_PASSCODE）可看全校；教師密碼（Teachers 分頁）只能看自己的班
+function prop_(k) { return PropertiesService.getScriptProperties().getProperty(k); }
+function isPrincipal_(pass) { var p = prop_('PRINCIPAL_PASSCODE'); return !!p && String(pass) === String(p); }
+function access_(pass) {
+  pass = String(pass == null ? '' : pass);
+  if (!pass) return null;
+  if (isPrincipal_(pass)) return { role: 'principal', name: '校長', classes: null };
+  var mine = rows_('Teachers').filter(function (r) { return String(r['密碼']) === pass; });
+  if (!mine.length) return null;
+  return { role: 'teacher', name: String(mine[0]['教師']), classes: mine.map(function (r) { return String(r['班級']); }) };
+}
+function can_(acc, cls) {
+  return !!acc && (acc.role === 'principal' || acc.classes.indexOf(String(cls)) >= 0);
+}
+function allClasses_() {
+  var seen = {}, out = [];
+  rows_('Roster').forEach(function (r) { var c = String(r['班級']); if (!seen[c]) { seen[c] = 1; out.push(c); } });
+  return out.sort();
+}
+function str_(v, max) { return String(v == null ? '' : v).slice(0, max || 100); }
+function dateStr_(v) {
+  return v instanceof Date ? Utilities.formatDate(v, 'Asia/Taipei', 'yyyy-MM-dd') : String(v);
+}
+
+function doGet(e) {
+  e = e || {};   // 在編輯器手動執行時沒有 e；網頁請求才會帶 e.parameter
+  var p = e.parameter || { action: 'ping' }, a = p.action;
+  try {
+    if (a === 'ping') return out_({ ok: true });
+    // 學生端：只提供座號（不含姓名），姓名僅後端與校長/教師可見
+    if (a === 'roster') {
+      var list = rows_('Roster').filter(function (r) { return String(r['班級']) === String(p.cls); })
+              .map(function (r) { return { seat: Number(r['座號']), avatar: String(r['圖案'] || '') }; });
+      // 只回傳今天已簽到的座號（不含顏色），讓班級圖卡顯示 ✓
+      var d0 = today_();
+      var done = rows_('Checkins').filter(function (r) {
+        return String(r['班級']) === String(p.cls) && dateStr_(r['日期']) === d0;
+      }).map(function (r) { return Number(r['座號']); });
+      return out_({ ok: true, roster: list, done: done });
+    }
+    // 校長總控台：全校總覽（含姓名）
+    if (a === 'overview') {
+      if (!isPrincipal_(p.pass)) return out_({ ok: false, error: 'auth' });
+      return out_(overview_(p.date || today_()));
+    }
+    // 以下為教師端（只能看自己的班）
+    var acc = access_(p.pass);
+    if (!acc) return out_({ ok: false, error: 'auth' });
+    if (a === 'login') {
+      return out_({ ok: true, role: acc.role, name: acc.name, classes: acc.classes || allClasses_() });
+    }
+    // 情緒統計：指定 cls＝該班（老師可看自己班）；不指定＝全校（僅校長）
+    if (a === 'stats') {
+      if (p.cls ? !can_(acc, p.cls) : acc.role !== 'principal') return out_({ ok: false, error: 'forbidden' });
+      return out_(stats_(p.cls || '', Math.min(Math.max(Number(p.days) || 7, 1), 400)));
+    }
+    if (!can_(acc, p.cls)) return out_({ ok: false, error: 'forbidden' });
+    if (a === 'today') {
+      var d = p.date || today_();
+      var cl = rows_('Checkins').filter(function (r) {
+        return String(r['班級']) === String(p.cls) && dateStr_(r['日期']) === d;
+      }).map(function (r) {
+        return { id: r.id, time: String(r['時間']), seat: Number(r['座號']), name: r['姓名'],
+                 color: r['顏色'], emotion: r['情緒'], note: r['備註'] };
+      });
+      var fu = rows_('Followups').filter(function (r) {
+        return String(r['班級']) === String(p.cls) && dateStr_(r['日期']) === d;
+      }).map(function (r) {
+        return { time: String(r['時間']), seat: Number(r['座號']), status: r['狀態'], note: r['處遇紀錄'], teacher: r['教師'] };
+      });
+      return out_({ ok: true, date: d, checkins: cl, followups: fu, roster: rosterOf_(p.cls) });
+    }
+    if (a === 'history') {
+      var limit = new Date(); limit.setDate(limit.getDate() - (Number(p.days) || 14));
+      var lim = Utilities.formatDate(limit, 'Asia/Taipei', 'yyyy-MM-dd');
+      var h = rows_('Checkins').filter(function (r) {
+        return String(r['班級']) === String(p.cls) && Number(r['座號']) === Number(p.seat) && dateStr_(r['日期']) >= lim;
+      }).map(function (r) {
+        return { date: dateStr_(r['日期']), time: String(r['時間']), color: r['顏色'], emotion: r['情緒'], note: r['備註'] };
+      });
+      var f = rows_('Followups').filter(function (r) {
+        return String(r['班級']) === String(p.cls) && Number(r['座號']) === Number(p.seat);
+      }).map(function (r) {
+        return { time: String(r['時間']), status: r['狀態'], note: r['處遇紀錄'], teacher: r['教師'] };
+      });
+      return out_({ ok: true, history: h, followups: f });
+    }
+    return out_({ ok: false, error: 'unknown action' });
+  } catch (err) {
+    return out_({ ok: false, error: String(err) });
+  }
+}
+
+// ===== 情緒統計（短期 7 天／中期 30 天／長期 180 天，由前端選 days）=====
+var NEG_ = { red: 1, blue: 1, yellow: 1 };   // 非綠色視為「負向／需留意」情緒
+function addDays_(ymd, n) {
+  var d = new Date(ymd + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n);
+  return Utilities.formatDate(d, 'UTC', 'yyyy-MM-dd');
+}
+function weekStart_(ymd) {   // 該週週一
+  var d = new Date(ymd + 'T00:00:00Z'), w = (d.getUTCDay() + 6) % 7;
+  return addDays_(ymd, -w);
+}
+function tally_(list) {
+  var t = { n: 0, red: 0, blue: 0, yellow: 0, green: 0 };
+  list.forEach(function (x) { t.n++; if (t[x.color] !== undefined) t[x.color]++; });
+  t.neg = t.n ? (t.red + t.blue + t.yellow) / t.n : 0;
+  return t;
+}
+function stats_(cls, days) {
+  var end = today_(), start = addDays_(end, -(days - 1)), prevStart = addDays_(start, -days);
+  var names = {}, sizes = {};
+  rows_('Roster').forEach(function (r) {
+    var c = String(r['班級']); names[c + '|' + Number(r['座號'])] = r['姓名'];
+    if (!cls || c === cls) sizes[c] = (sizes[c] || 0) + 1;
+  });
+  // 每位學生每天取最新一筆
+  var latest = {};
+  rows_('Checkins').forEach(function (r) {
+    var d = dateStr_(r['日期']), c = String(r['班級']);
+    if (d < prevStart || d > end || (cls && c !== cls)) return;
+    var k = c + '|' + Number(r['座號']) + '|' + d, t = String(r['時間']);
+    if (!latest[k] || t >= latest[k].time) {
+      latest[k] = { cls: c, seat: Number(r['座號']), date: d, time: t, color: r['顏色'], emotion: String(r['情緒'] || '') };
+    }
+  });
+  var all = Object.keys(latest).map(function (k) { return latest[k]; });
+  var cur = all.filter(function (x) { return x.date >= start; });
+  var prev = all.filter(function (x) { return x.date < start; });
+
+  // 時間序列：31 天內以日、較長以週為單位
+  var weekly = days > 31, buckets = {};
+  cur.forEach(function (x) {
+    var key = weekly ? weekStart_(x.date) : x.date;
+    var b = buckets[key] || (buckets[key] = { key: key, n: 0, red: 0, blue: 0, yellow: 0, green: 0 });
+    b.n++; if (b[x.color] !== undefined) b[x.color]++;
+  });
+  var series = Object.keys(buckets).sort().map(function (k) { return buckets[k]; });
+
+  // 情緒排行
+  var emo = {};
+  cur.forEach(function (x) {
+    if (!x.emotion) return;
+    var e = emo[x.emotion] || (emo[x.emotion] = { name: x.emotion, color: x.color, n: 0 }); e.n++;
+  });
+  var emotions = Object.keys(emo).map(function (k) { return emo[k]; }).sort(function (a, b) { return b.n - a.n; });
+
+  // 各班（全校視角）
+  var byClass = [];
+  if (!cls) {
+    Object.keys(sizes).sort().forEach(function (c) {
+      var mine = cur.filter(function (x) { return x.cls === c; }), pm = prev.filter(function (x) { return x.cls === c; });
+      var daysActive = {}; mine.forEach(function (x) { daysActive[x.date] = 1; });
+      var nd = Object.keys(daysActive).length, t = tally_(mine);
+      byClass.push({ cls: c, size: sizes[c], n: t.n, red: t.red, blue: t.blue, yellow: t.yellow, green: t.green, neg: t.neg,
+        prevNeg: pm.length ? tally_(pm).neg : null, participation: nd && sizes[c] ? t.n / (nd * sizes[c]) : 0 });
+    });
+  }
+
+  // 持續關注學生（含姓名；前端依權限顯示）
+  var per = {};
+  cur.forEach(function (x) { var k = x.cls + '|' + x.seat; (per[k] = per[k] || []).push(x); });
+  var watch = [];
+  Object.keys(per).forEach(function (k) {
+    var list = per[k].sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var t = tally_(list), streak = 0;
+    for (var i = list.length - 1; i >= 0 && NEG_[list[i].color]; i--) streak++;
+    var why = [];
+    if (streak >= 3) why.push('連續 ' + streak + ' 次非綠色');
+    if (t.n >= 5 && t.neg >= 0.6) why.push('負向情緒占 ' + Math.round(t.neg * 100) + '%');
+    if (t.red >= 3) why.push('紅色 ' + t.red + ' 次');
+    if (why.length) {
+      var pt = prev.filter(function (x) { return x.cls === list[0].cls && x.seat === list[0].seat; });
+      watch.push({ cls: list[0].cls, seat: list[0].seat, name: names[k] || '', n: t.n, red: t.red, blue: t.blue, yellow: t.yellow,
+        green: t.green, neg: t.neg, prevNeg: pt.length ? tally_(pt).neg : null, streak: streak, last: list[list.length - 1].color, why: why });
+    }
+  });
+  watch.sort(function (a, b) { return (b.streak - a.streak) || (b.neg - a.neg); });
+
+  return { ok: true, scope: cls || 'school', days: days, bucket: weekly ? 'week' : 'day', start: start, end: end,
+    totals: tally_(cur), prevTotals: tally_(prev), series: series, emotions: emotions, byClass: byClass, watch: watch };
+}
+
+// 全校總覽：每班名單 + 當日每位學生最新一筆簽到 + 處遇
+function overview_(d) {
+  var classes = {}, order = [];
+  rows_('Roster').forEach(function (r) {
+    var c = String(r['班級']);
+    if (!classes[c]) { classes[c] = { cls: c, students: {} }; order.push(c); }
+    classes[c].students[Number(r['座號'])] = { seat: Number(r['座號']), name: r['姓名'], avatar: String(r['圖案'] || '') };
+  });
+  rows_('Checkins').forEach(function (r) {
+    if (dateStr_(r['日期']) !== d) return;
+    var c = String(r['班級']), s = Number(r['座號']);
+    if (!classes[c]) { classes[c] = { cls: c, students: {} }; order.push(c); }
+    var st = classes[c].students[s] || (classes[c].students[s] = { seat: s, name: r['姓名'] });
+    if (!st.time || String(r['時間']) >= st.time) {
+      st.time = String(r['時間']); st.color = r['顏色']; st.emotion = r['情緒']; st.note = r['備註'];
+    }
+  });
+  rows_('Followups').forEach(function (r) {
+    if (dateStr_(r['日期']) !== d) return;
+    var c = String(r['班級']), s = Number(r['座號']);
+    if (classes[c] && classes[c].students[s]) classes[c].students[s].fu = { status: r['狀態'], note: r['處遇紀錄'], teacher: r['教師'] };
+  });
+  order.sort();
+  return {
+    ok: true, date: d,
+    classes: order.map(function (c) {
+      var list = Object.keys(classes[c].students).map(Number).sort(function (a, b) { return a - b; })
+        .map(function (k) { return classes[c].students[k]; });
+      return { cls: c, students: list };
+    })
+  };
+}
+
+function rosterOf_(cls) {
+  return rows_('Roster').filter(function (r) { return String(r['班級']) === String(cls); })
+    .map(function (r) { return { seat: Number(r['座號']), name: r['姓名'], avatar: String(r['圖案'] || '') }; });
+}
+
+// 前端以 text/plain 傳 JSON，避免 CORS 預檢
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var b = JSON.parse(e.postData.contents), a = b.action;
+    if (a === 'checkin') {
+      if (COLORS.indexOf(b.color) < 0) return out_({ ok: false, error: 'bad color' });
+      var cls = str_(b.cls, 10), seat = Number(b.seat);
+      var me = rosterOf_(cls).filter(function (r) { return r.seat === seat; })[0];
+      var name = me ? me.name : str_(b.name, 20);
+      sheet_('Checkins').appendRow([Utilities.getUuid(), now_(), today_(), cls, seat, name,
+        b.color, str_(b.emotion, 30), str_(b.note, 200)]);
+      return out_({ ok: true });
+    }
+    if (a === 'setAvatar') {   // 學生自選圖案（自我圖式）
+      var av = str_(b.avatar, 8);
+      if (!av || /[A-Za-z0-9<>&"'\s]/.test(av)) return out_({ ok: false, error: 'bad avatar' });
+      var rsh = sheet_('Roster'), rv = rsh.getDataRange().getValues(), col = rv[0].indexOf('圖案');
+      if (col < 0) { col = rv[0].length; rsh.getRange(1, col + 1).setValue('圖案'); }
+      for (var j = 1; j < rv.length; j++) {
+        if (String(rv[j][0]) === String(b.cls) && Number(rv[j][1]) === Number(b.seat)) {
+          rsh.getRange(j + 1, col + 1).setValue(av);
+          return out_({ ok: true });
+        }
+      }
+      return out_({ ok: false, error: 'not in roster' });
+    }
+    var acc = access_(b.pass);
+    if (!acc) return out_({ ok: false, error: 'auth' });
+    if (!can_(acc, b.cls)) return out_({ ok: false, error: 'forbidden' });
+    if (a === 'saveRoster') {
+      var sh = sheet_('Roster');
+      var all = sh.getDataRange().getValues();
+      var keep = {};   // 重存名單時保留學生已選的圖案
+      for (var i = all.length - 1; i >= 1; i--) if (String(all[i][0]) === String(b.cls)) { keep[Number(all[i][1])] = all[i][3] || ''; sh.deleteRow(i + 1); }
+      (b.roster || []).forEach(function (r) { sh.appendRow([str_(b.cls, 10), Number(r.seat), str_(r.name, 20), keep[Number(r.seat)] || '']); });
+      return out_({ ok: true });
+    }
+    if (a === 'followup') {
+      sheet_('Followups').appendRow([now_(), today_(), str_(b.cls, 10), Number(b.seat), str_(b.name, 20),
+        str_(b.status, 20), str_(b.note, 500), str_(b.teacher || acc.name, 20)]);
+      return out_({ ok: true });
+    }
+    return out_({ ok: false, error: 'unknown action' });
+  } catch (err) {
+    return out_({ ok: false, error: String(err) });
+  } finally {
+    lock.releaseLock();
+  }
+}
