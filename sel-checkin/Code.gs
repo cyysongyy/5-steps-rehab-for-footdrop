@@ -93,6 +93,11 @@ function doGet(e) {
     if (a === 'login') {
       return out_({ ok: true, role: acc.role, name: acc.name, classes: acc.classes || allClasses_() });
     }
+    // 情緒統計：指定 cls＝該班（老師可看自己班）；不指定＝全校（僅校長）
+    if (a === 'stats') {
+      if (p.cls ? !can_(acc, p.cls) : acc.role !== 'principal') return out_({ ok: false, error: 'forbidden' });
+      return out_(stats_(p.cls || '', Math.min(Math.max(Number(p.days) || 7, 1), 400)));
+    }
     if (!can_(acc, p.cls)) return out_({ ok: false, error: 'forbidden' });
     if (a === 'today') {
       var d = p.date || today_();
@@ -128,6 +133,96 @@ function doGet(e) {
   } catch (err) {
     return out_({ ok: false, error: String(err) });
   }
+}
+
+// ===== 情緒統計（短期 7 天／中期 30 天／長期 180 天，由前端選 days）=====
+var NEG_ = { red: 1, blue: 1, yellow: 1 };   // 非綠色視為「負向／需留意」情緒
+function addDays_(ymd, n) {
+  var d = new Date(ymd + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n);
+  return Utilities.formatDate(d, 'UTC', 'yyyy-MM-dd');
+}
+function weekStart_(ymd) {   // 該週週一
+  var d = new Date(ymd + 'T00:00:00Z'), w = (d.getUTCDay() + 6) % 7;
+  return addDays_(ymd, -w);
+}
+function tally_(list) {
+  var t = { n: 0, red: 0, blue: 0, yellow: 0, green: 0 };
+  list.forEach(function (x) { t.n++; if (t[x.color] !== undefined) t[x.color]++; });
+  t.neg = t.n ? (t.red + t.blue + t.yellow) / t.n : 0;
+  return t;
+}
+function stats_(cls, days) {
+  var end = today_(), start = addDays_(end, -(days - 1)), prevStart = addDays_(start, -days);
+  var names = {}, sizes = {};
+  rows_('Roster').forEach(function (r) {
+    var c = String(r['班級']); names[c + '|' + Number(r['座號'])] = r['姓名'];
+    if (!cls || c === cls) sizes[c] = (sizes[c] || 0) + 1;
+  });
+  // 每位學生每天取最新一筆
+  var latest = {};
+  rows_('Checkins').forEach(function (r) {
+    var d = dateStr_(r['日期']), c = String(r['班級']);
+    if (d < prevStart || d > end || (cls && c !== cls)) return;
+    var k = c + '|' + Number(r['座號']) + '|' + d, t = String(r['時間']);
+    if (!latest[k] || t >= latest[k].time) {
+      latest[k] = { cls: c, seat: Number(r['座號']), date: d, time: t, color: r['顏色'], emotion: String(r['情緒'] || '') };
+    }
+  });
+  var all = Object.keys(latest).map(function (k) { return latest[k]; });
+  var cur = all.filter(function (x) { return x.date >= start; });
+  var prev = all.filter(function (x) { return x.date < start; });
+
+  // 時間序列：31 天內以日、較長以週為單位
+  var weekly = days > 31, buckets = {};
+  cur.forEach(function (x) {
+    var key = weekly ? weekStart_(x.date) : x.date;
+    var b = buckets[key] || (buckets[key] = { key: key, n: 0, red: 0, blue: 0, yellow: 0, green: 0 });
+    b.n++; if (b[x.color] !== undefined) b[x.color]++;
+  });
+  var series = Object.keys(buckets).sort().map(function (k) { return buckets[k]; });
+
+  // 情緒排行
+  var emo = {};
+  cur.forEach(function (x) {
+    if (!x.emotion) return;
+    var e = emo[x.emotion] || (emo[x.emotion] = { name: x.emotion, color: x.color, n: 0 }); e.n++;
+  });
+  var emotions = Object.keys(emo).map(function (k) { return emo[k]; }).sort(function (a, b) { return b.n - a.n; });
+
+  // 各班（全校視角）
+  var byClass = [];
+  if (!cls) {
+    Object.keys(sizes).sort().forEach(function (c) {
+      var mine = cur.filter(function (x) { return x.cls === c; }), pm = prev.filter(function (x) { return x.cls === c; });
+      var daysActive = {}; mine.forEach(function (x) { daysActive[x.date] = 1; });
+      var nd = Object.keys(daysActive).length, t = tally_(mine);
+      byClass.push({ cls: c, size: sizes[c], n: t.n, red: t.red, blue: t.blue, yellow: t.yellow, green: t.green, neg: t.neg,
+        prevNeg: pm.length ? tally_(pm).neg : null, participation: nd && sizes[c] ? t.n / (nd * sizes[c]) : 0 });
+    });
+  }
+
+  // 持續關注學生（含姓名；前端依權限顯示）
+  var per = {};
+  cur.forEach(function (x) { var k = x.cls + '|' + x.seat; (per[k] = per[k] || []).push(x); });
+  var watch = [];
+  Object.keys(per).forEach(function (k) {
+    var list = per[k].sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var t = tally_(list), streak = 0;
+    for (var i = list.length - 1; i >= 0 && NEG_[list[i].color]; i--) streak++;
+    var why = [];
+    if (streak >= 3) why.push('連續 ' + streak + ' 次非綠色');
+    if (t.n >= 5 && t.neg >= 0.6) why.push('負向情緒占 ' + Math.round(t.neg * 100) + '%');
+    if (t.red >= 3) why.push('紅色 ' + t.red + ' 次');
+    if (why.length) {
+      var pt = prev.filter(function (x) { return x.cls === list[0].cls && x.seat === list[0].seat; });
+      watch.push({ cls: list[0].cls, seat: list[0].seat, name: names[k] || '', n: t.n, red: t.red, blue: t.blue, yellow: t.yellow,
+        green: t.green, neg: t.neg, prevNeg: pt.length ? tally_(pt).neg : null, streak: streak, last: list[list.length - 1].color, why: why });
+    }
+  });
+  watch.sort(function (a, b) { return (b.streak - a.streak) || (b.neg - a.neg); });
+
+  return { ok: true, scope: cls || 'school', days: days, bucket: weekly ? 'week' : 'day', start: start, end: end,
+    totals: tally_(cur), prevTotals: tally_(prev), series: series, emotions: emotions, byClass: byClass, watch: watch };
 }
 
 // 全校總覽：每班名單 + 當日每位學生最新一筆簽到 + 處遇
