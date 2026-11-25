@@ -77,6 +77,7 @@ textarea.roster{height:240px}
 </div>
 <div id="modal" class="modal hide"><div id="modalBody"></div></div>
 
+<script src="faces.js"></script>
 <script src="stats.js"></script>
 <script src="config.js"></script>
 <script>
@@ -204,7 +205,7 @@ function render(){
     return `<div class="s ${col} ${s.c&&s.c.color==='red'&&!s.fu?'urgent':''}" data-seat="${s.seat}">
       ${s.c&&s.c.note?'<span class="badge">💬</span>':''}
       <div class="top"><span>${esc(s.avatar)} ${s.seat}號</span><span>${esc(s.name)}</span></div>
-      <div class="g">${s.c?COLOR[col].zh+'<br>'+esc(s.c.emotion||''):'<span class="mute">尚未簽到</span>'}</div>
+      <div class="g">${s.c?COLOR[col].zh+'<br>'+SELFaces.html(s.c.emotion||'',22):'<span class="mute">尚未簽到</span>'}</div>
       ${s.c&&s.c.note?`<div class="n">${esc(s.c.note)}</div>`:''}
       ${s.fu?`<div class="st">✓ ${esc(s.fu.status)}</div>`:''}</div>`}).join('')||'<div class="mute">沒有符合的學生</div>';
   $('grid').onclick=e=>{const c=e.target.closest('.s');if(c)openStudent(+c.dataset.seat)};
@@ -220,7 +221,7 @@ async function openStudent(seat){
   const days=[...Array(14)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')});
   const notes=(h.history||[]).filter(x=>x.note).slice(-5).reverse();
   showModal(`<h3>${seat}號 ${esc(s.name)}</h3>
-    <div>今日：${s.c?`<b>${COLOR[s.c.color].zh}</b> ${esc(s.c.emotion||'')}`:'<span class="mute">尚未簽到</span>'}</div>
+    <div>今日：${s.c?`<b>${COLOR[s.c.color].zh}</b> ${SELFaces.html(s.c.emotion||'',22)}`:'<span class="mute">尚未簽到</span>'}</div>
     ${s.c&&s.c.note?`<div style="background:#f3f4f6;padding:8px;border-radius:8px;margin-top:6px">💬 ${esc(s.c.note)}</div>`:''}
     <p class="mute" style="margin:12px 0 0">近 14 天（舊→新，滑過可看日期）</p>
     <div class="hist">${days.map(d=>`<div class="dot ${byDay[d]?byDay[d].color:''}" title="${d}">${d.slice(8)}</div>`).join('')}</div>

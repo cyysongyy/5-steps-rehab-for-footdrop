@@ -22,7 +22,7 @@
 .st-col i{display:block}
 .st-lab{display:flex;gap:3px;font-size:11px;color:#6b7280;margin-top:3px}.st-lab span{flex:1;min-width:6px;text-align:center;overflow:visible;white-space:nowrap}
 .st-leg{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;margin-top:8px}.st-leg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
-.st-bar{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:14px}.st-bar .nm{width:120px;flex:none}.st-bar .tr{flex:1;background:#f1f5f9;border-radius:6px;height:16px;overflow:hidden}.st-bar .tr i{display:block;height:100%}
+.st-bar{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:14px}.st-bar .nm{width:150px;flex:none}.st-bar .tr{flex:1;background:#f1f5f9;border-radius:6px;height:16px;overflow:hidden}.st-bar .tr i{display:block;height:100%}
 .st-t{width:100%;border-collapse:collapse;font-size:14px}.st-t th,.st-t td{text-align:left;padding:6px 5px;border-bottom:1px solid #e5e7eb}
 .st-note{color:#6b7280;font-size:13px;margin-top:6px}`;
   if(!document.getElementById('st-css')){const s=document.createElement('style');s.id='st-css';s.textContent=css;document.head.appendChild(s)}
@@ -49,7 +49,7 @@
   function emotions(d){
     if(!d.emotions.length)return '';
     const max=d.emotions[0].n;
-    return `<div class="st-card"><h3>情緒排行</h3>`+d.emotions.slice(0,12).map(e=>`<div class="st-bar"><span class="nm">${esc(e.name)}</span><span class="tr"><i style="width:${e.n/max*100}%;background:${COL[e.color]||'#94a3b8'}"></i></span><span>${e.n}</span></div>`).join('')+'</div>';
+    return `<div class="st-card"><h3>情緒排行</h3>`+d.emotions.slice(0,12).map(e=>`<div class="st-bar"><span class="nm">${window.SELFaces?SELFaces.html(e.name,22):esc(e.name)}</span><span class="tr"><i style="width:${e.n/max*100}%;background:${COL[e.color]||'#94a3b8'}"></i></span><span>${e.n}</span></div>`).join('')+'</div>';
   }
   function classes(d){
     if(!d.byClass||!d.byClass.length)return '';

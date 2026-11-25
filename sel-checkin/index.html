@@ -34,15 +34,17 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 .agrid button{font-size:30px;background:#fff;border:3px solid transparent;border-radius:12px;padding:4px;cursor:pointer}
 .agrid button.sel{border-color:var(--pri)}
 .hello{font-size:20px;font-weight:700;text-align:center;color:var(--pri);min-height:28px;margin-top:10px}
-/* 情緒：依顏色分組，年級堆疊 4 / 8 / 12 種 */
-.zone{border-radius:16px;padding:10px;margin-bottom:10px}
-.zone h3{margin:0 0 8px;font-size:16px;color:#fff}
-.z-red{background:var(--red)}.z-blue{background:var(--blue)}.z-yellow{background:var(--yellow)}.z-yellow h3{color:#3a2b00}.z-green{background:var(--green)}
-.ebtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
-.ebtn{border:4px solid transparent;background:#fff;border-radius:14px;padding:8px 2px;cursor:pointer;font-family:inherit;font-size:16px;font-weight:700;color:var(--ink);line-height:1.25}
-.ebtn .face{font-size:38px;display:block}
-.ebtn.sel{border-color:#111;transform:scale(1.05);box-shadow:0 4px 12px rgba(0,0,0,.35)}
-.ebtn.dim{opacity:.5}
+/* 情緒卡片：柔和粉彩＋向量臉譜（faces.js） */
+.egrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ecard{position:relative;display:flex;align-items:center;gap:8px;text-align:left;border:3px solid transparent;border-radius:20px;padding:11px 8px;background:var(--bg);cursor:pointer;font-family:inherit;transition:transform .12s,box-shadow .12s}
+.ecard b{display:block;font-size:17px;color:var(--fg);line-height:1.25;white-space:nowrap}
+.ecard small{display:block;font-size:12px;color:var(--st);line-height:1.35;margin-top:2px}
+.ecard.sel{border-color:var(--st);box-shadow:0 5px 16px rgba(0,0,0,.14);transform:scale(1.025)}
+.ecard.sel::after{content:"✓";position:absolute;top:-8px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--st);color:#fff;font-size:14px;line-height:24px;text-align:center;font-weight:700}
+.ecard.dim{opacity:.55}
+.tier{grid-column:1/-1;text-align:center;font-size:13px;color:var(--mute);margin:8px 0 0}
+.egrid-note{text-align:center;color:var(--mute);font-size:13px;margin-top:12px}
+.bigface{display:flex;justify-content:center}
 textarea{resize:vertical}
 .go{width:100%;background:var(--pri);color:#fff;border:0;border-radius:16px;padding:16px;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit}
 .go:disabled{background:#c7c9d6}
@@ -101,7 +103,7 @@ textarea{resize:vertical}
   </div>
 
   <div id="doneView" class="card done-view hide">
-    <div class="big" id="dEmoji"></div>
+    <div class="bigface" id="dEmoji"></div>
     <h2 id="dTitle" style="margin:6px 0"></h2>
     <p id="dMsg" style="margin:0"></p>
     <ul class="tips" id="dTips"></ul>
@@ -112,6 +114,7 @@ textarea{resize:vertical}
 </div>
 
 <script src="config.js"></script>
+<script src="faces.js"></script>
 <script>
 /* ========= 設定區（可依學校調整）========= */
 const GAS_URL = window.SEL_GAS_URL || 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';   // 網址在 config.js 設定
@@ -252,15 +255,15 @@ function renderAvatars(){
 }
 function renderEmotions(){
   if (!state.grade){ $('emotions').innerHTML='<div class="sub">先選好年級</div>'; return; }
-  const t = tierOf(state.grade);
-  $('emotions').innerHTML = Object.entries(COLORS).map(([ck,c])=>{
-    const list = EMOTIONS.filter(e=>e.color===ck && e.tier<=t);
-    return `<div class="zone z-${ck}"><h3>${c.emoji} ${c.zh}・${c.feel}區</h3><div class="ebtns">`+
-      list.map(e=>`<button class="ebtn" data-n="${e.name}"><span class="face">${e.em}</span>${e.name}</button>`).join('')+`</div></div>`;
-  }).join('');
-  $('emotions').onclick = e => { const b=e.target.closest('.ebtn'); if(!b) return;
+  const t = tierOf(state.grade), label = {2:'再多一點的心情', 3:'更細緻的心情'};
+  const card = e => { const z=SELFaces.ZONE[e.color], f=SELFaces.FACES[e.name];
+    return `<button class="ecard" data-n="${e.name}" style="--bg:${z.card};--fg:${z.text};--st:${z.stroke}">${SELFaces.svg(e.name,50)}<span><b>${e.name}</b><small>${f.desc}</small></span></button>`; };
+  let h='';
+  for (let k=1;k<=t;k++){ if (label[k]) h+=`<div class="tier">${label[k]}</div>`; h+=EMOTIONS.filter(e=>e.tier===k).map(card).join(''); }
+  $('emotions').innerHTML = `<div class="egrid">${h}</div><div class="egrid-note">每一種心情，都可以在這裡安心停留。</div>`;
+  $('emotions').onclick = e => { const b=e.target.closest('.ecard'); if(!b) return;
     state.emo = EMOTIONS.find(x=>x.name===b.dataset.n);
-    document.querySelectorAll('.ebtn').forEach(x=>{x.classList.toggle('sel',x===b); x.classList.toggle('dim',x!==b);}); check(); };
+    document.querySelectorAll('.ecard').forEach(x=>{x.classList.toggle('sel',x===b); x.classList.toggle('dim',x!==b);}); check(); };
 }
 function check(){ $('send').disabled = !(state.cls && state.seat && state.emo); }
 function backToList(){
@@ -275,7 +278,7 @@ async function submit(){
     if (!r.ok) throw new Error(r.error||'fail');
     $('note').value='';
     const c = COLORS[e.color];
-    $('dEmoji').textContent=e.em; $('dTitle').textContent=`你選了「${e.name}」（${c.zh}・${c.feel}區）`; $('dMsg').textContent=c.msg;
+    $('dEmoji').innerHTML=SELFaces.svg(e.name,110); $('dTitle').textContent=`你選了「${e.name}」（${c.zh}・${c.feel}區）`; $('dMsg').textContent=c.msg;
     $('dTips').innerHTML = c.tips.map(t=>`<li>${t}</li>`).join('');
     $('dSig').innerHTML = SIGNALS.map((g,i)=>`<div class="sc"><img src="${g.img}" alt="${g.name}" loading="lazy"><b>${i+1}. ${g.name}</b>${g.use}</div>`).join('');
     $('formView').classList.add('hide'); $('doneView').classList.remove('hide'); window.scrollTo(0,0);
