@@ -73,6 +73,7 @@ th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertic
   </div>
 </div>
 
+<script src="faces.js"></script>
 <script src="stats.js"></script>
 <script src="config.js"></script>
 <script>
@@ -145,7 +146,7 @@ function render(){
   data.classes.forEach(c=>c.students.forEach(s=>{total++;cnt[s.color||'none']++}));
   $('stats').innerHTML=`<div class="chip all"><b>${total}</b>全校人數</div><div class="chip red"><b>${cnt.red}</b>🔴 生氣</div><div class="chip blue"><b>${cnt.blue}</b>🔵 沮喪</div><div class="chip yellow"><b>${cnt.yellow}</b>🟡 焦慮</div><div class="chip green"><b>${cnt.green}</b>🟢 平和</div><div class="chip none"><b>${cnt.none}</b>⚪ 未簽到</div>`;
   const urgent=[];data.classes.forEach(c=>c.students.forEach(s=>{if(need(s))urgent.push({cls:c.cls,...s})}));
-  $('alerts').innerHTML=urgent.length?`<div class="alert"><b>🚨 優先關心（尚未處遇）：${urgent.length} 位</b>`+urgent.map(s=>`<div>${clsLabel(s.cls)} ${s.seat}號 <b>${esc(s.name)}</b>　<span class="dot ${s.color}"></span>${esc(s.emotion||COLOR[s.color])}${s.note?'　💬 '+esc(s.note):''}</div>`).join('')+'</div>':'';
+  $('alerts').innerHTML=urgent.length?`<div class="alert"><b>🚨 優先關心（尚未處遇）：${urgent.length} 位</b>`+urgent.map(s=>`<div>${clsLabel(s.cls)} ${s.seat}號 <b>${esc(s.name)}</b>　<span class="dot ${s.color}"></span>${s.emotion?SELFaces.html(s.emotion,22):esc(COLOR[s.color])}${s.note?'　💬 '+esc(s.note):''}</div>`).join('')+'</div>':'';
   $('classes').innerHTML=data.classes.map(c=>{
     const n=c.students.length,k={red:0,blue:0,yellow:0,green:0};let done=0;
     c.students.forEach(s=>{if(s.color){k[s.color]++;done++}});
@@ -155,7 +156,7 @@ function render(){
   $('classes').onclick=e=>{const c=e.target.closest('.cc');if(c){openCls=openCls===c.dataset.c?'':c.dataset.c;render()}};
   const oc=data.classes.find(c=>c.cls===openCls);
   $('detail').innerHTML=oc?`<div class="detail"><b>${clsLabel(oc.cls)}（${esc($('date').value)}）</b><table><tr><th>座號</th><th>姓名</th><th>情緒</th><th>留言</th><th>處遇</th></tr>`+
-    oc.students.map(s=>`<tr><td>${esc(s.avatar||'')} ${s.seat}</td><td>${esc(s.name)}</td><td>${s.color?`<span class="dot ${s.color}"></span>${esc(s.emotion||COLOR[s.color])}`:'<span class="mute">未簽到</span>'}</td><td>${esc(s.note||'')}</td><td>${s.fu?esc(s.fu.status)+(s.fu.note?'：'+esc(s.fu.note):''):''}</td></tr>`).join('')+'</table></div>':'';
+    oc.students.map(s=>`<tr><td>${esc(s.avatar||'')} ${s.seat}</td><td>${esc(s.name)}</td><td>${s.color?`<span class="dot ${s.color}"></span>${s.emotion?SELFaces.html(s.emotion,22):esc(COLOR[s.color])}`:'<span class="mute">未簽到</span>'}</td><td>${esc(s.note||'')}</td><td>${s.fu?esc(s.fu.status)+(s.fu.note?'：'+esc(s.fu.note):''):''}</td></tr>`).join('')+'</table></div>':'';
   $('meta').textContent=`${$('date').value} · 更新 ${new Date().toTimeString().slice(0,5)} · 每分鐘自動更新`;
 }
 function exportCsv(){
