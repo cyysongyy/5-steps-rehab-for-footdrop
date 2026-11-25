@@ -8,14 +8,15 @@
  * 工作表（首次執行自動建立）：
  *   Checkins  : id, 時間, 日期, 班級, 座號, 姓名, 顏色, 情緒, 備註
  *   Roster    : 班級（例：3甲）, 座號, 姓名, 圖案  ← 名單放這裡，用 RosterSeed.gs 一次匯入；「圖案」由學生自選（自我圖式）
- *   Teachers  : 班級, 教師, 密碼   ← 老師登入用；同一位老師帶多班就多列、用同一組密碼
+ *   Teachers  : 班級, 教師, 密碼, 信箱   ← 老師登入用；同一位老師帶多班就多列、用同一組密碼。
+ *               「信箱」填學校 Google 信箱，學生選紅色時會立刻寄信通知（可留空＝不通知）
  *   Followups : 時間, 日期, 班級, 座號, 姓名, 狀態, 處遇紀錄, 教師
  */
 var COLORS = ['red', 'blue', 'yellow', 'green'];
 var SHEETS = {
   Checkins: ['id', '時間', '日期', '班級', '座號', '姓名', '顏色', '情緒', '備註'],
   Roster: ['班級', '座號', '姓名', '圖案'],
-  Teachers: ['班級', '教師', '密碼'],
+  Teachers: ['班級', '教師', '密碼', '信箱'],
   Followups: ['時間', '日期', '班級', '座號', '姓名', '狀態', '處遇紀錄', '教師']
 };
 
@@ -264,6 +265,41 @@ function rosterOf_(cls) {
     .map(function (r) { return { seat: Number(r['座號']), name: r['姓名'], avatar: String(r['圖案'] || '') }; });
 }
 
+// ===== 即時通知導師（Email）=====
+// 規則：選「紅色」一律通知；「藍色／黃色」只有在學生有留言時才通知；同一位學生一天只通知一次。
+// 收件人：Teachers 分頁該班的「信箱」欄；另可在指令碼屬性設 PRINCIPAL_EMAIL（校長副本）、DASHBOARD_URL（看板網址）。
+function clsLabel_(c) {
+  var z = ['', '一', '二', '三', '四', '五', '六'], g = parseInt(c, 10);
+  return (z[g] || g) + '年' + String(c).slice(String(g).length) + '班';
+}
+function alertTeachers_(cls, seat, name, color, emotion, hasNote) {
+  var urgent = color === 'red' || ((color === 'blue' || color === 'yellow') && hasNote);
+  if (!urgent) return;
+  var cache = CacheService.getScriptCache(), key = 'al|' + cls + '|' + seat + '|' + today_();
+  if (cache.get(key)) return;                                  // 今天已通知過
+  var seen = {}, to = [];
+  var add = function (m) { m = String(m || '').trim(); if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m) && !seen[m]) { seen[m] = 1; to.push(m); } };
+  rows_('Teachers').forEach(function (r) { if (String(r['班級']) === String(cls)) add(r['信箱']); });
+  add(prop_('PRINCIPAL_EMAIL'));
+  if (!to.length || MailApp.getRemainingDailyQuota() < 1) return;
+  var dash = prop_('DASHBOARD_URL') || '';
+  var label = color === 'red' ? '紅色（生氣區）' : (color === 'blue' ? '藍色（沮喪區）' : '黃色（焦慮區）');
+  MailApp.sendEmail({
+    to: to.join(','), name: 'SEL 情緒簽到',
+    subject: '【SEL 關心】' + clsLabel_(cls) + ' ' + seat + '號 ' + name + ' 選了 ' + label,
+    body: now_() + '\n\n班級：' + clsLabel_(cls) + '\n學生：' + seat + '號 ' + name + '\n情緒：' + emotion + '｜' + label + '\n' +
+      (hasNote ? '學生有留言，請登入看板查看。\n' : '') + '\n請盡快關心這位同學。' + (dash ? '\n看板：' + dash : '') +
+      '\n\n※ 本信含學生個資，請勿轉寄。同一位學生一天只會通知一次。'
+  });
+  cache.put(key, '1', 21600);
+}
+// 測試用：在編輯器選 testAlert 執行一次（第一次會要求寄信授權），會寄一封測試信給你自己
+function testAlert() {
+  var me = Session.getEffectiveUser().getEmail();
+  MailApp.sendEmail({ to: me, name: 'SEL 情緒簽到', subject: '【SEL 關心】測試信', body: '收到這封信代表即時通知已經可以使用。' });
+  Logger.log('已寄測試信給 ' + me);
+}
+
 // 前端以 text/plain 傳 JSON，避免 CORS 預檢
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -277,6 +313,8 @@ function doPost(e) {
       var name = me ? me.name : str_(b.name, 20);
       sheet_('Checkins').appendRow([Utilities.getUuid(), now_(), today_(), cls, seat, name,
         b.color, str_(b.emotion, 30), str_(b.note, 200)]);
+      // 即時通知導師（寄信失敗不影響簽到）
+      try { alertTeachers_(cls, seat, name, b.color, str_(b.emotion, 30), !!str_(b.note, 200)); } catch (mailErr) {}
       return out_({ ok: true });
     }
     if (a === 'setAvatar') {   // 學生自選圖案（自我圖式）
