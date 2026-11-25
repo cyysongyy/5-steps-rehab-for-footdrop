@@ -68,7 +68,8 @@ function dateStr_(v) {
 }
 
 function doGet(e) {
-  var p = e.parameter, a = p.action;
+  e = e || {};   // 在編輯器手動執行時沒有 e；網頁請求才會帶 e.parameter
+  var p = e.parameter || { action: 'ping' }, a = p.action;
   try {
     if (a === 'ping') return out_({ ok: true });
     // 學生端：只提供座號（不含姓名），姓名僅後端與校長/教師可見
