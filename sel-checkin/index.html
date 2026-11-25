@@ -7,10 +7,10 @@
 <style>
 :root{
   --red:#e5484d; --blue:#3b82f6; --yellow:#f5b301; --green:#2fa86b;
-  --ink:#1f2937; --mute:#6b7280; --bg:#f7f7fb; --card:#fff; --line:#e5e7eb; --pri:#4f46e5;
+  --ink:#1f2937; --mute:#6b7280; --page:#f7f7fb; --card:#fff; --line:#e5e7eb; --pri:#4f46e5;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:18px}
+body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;background:var(--page);color:var(--ink);font-size:18px;transition:background .3s}
 .wrap{max-width:640px;margin:0 auto;padding:16px 16px 40px}
 h1{font-size:24px;margin:8px 0 2px;text-align:center}
 .sub{text-align:center;color:var(--mute);font-size:15px;margin-bottom:14px}
@@ -46,6 +46,11 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 .egrid.big .ecard{flex-direction:column;text-align:center;padding:16px 8px 14px;gap:6px}
 .egrid.big .ecard b{font-size:21px}
 .egrid.big .ecard small{font-size:13.5px}
+.egrid.compact{grid-template-columns:repeat(4,1fr);gap:6px}
+.egrid.compact .ecard{flex-direction:column;text-align:center;padding:9px 2px 8px;gap:3px;border-radius:16px}
+.egrid.compact .ecard b{font-size:13.5px;letter-spacing:-.3px}
+.egrid.compact .ecard small{display:none}
+.egrid.compact .ecard.sel::after{top:-7px;right:-5px;width:20px;height:20px;line-height:20px;font-size:12px}
 .tier{grid-column:1/-1;text-align:center;font-size:13px;color:var(--mute);margin:8px 0 0}
 .egrid-note{text-align:center;color:var(--mute);font-size:13px;margin-top:12px}
 .bigface{display:flex;justify-content:center}
@@ -71,7 +76,7 @@ textarea{resize:vertical}
 </head>
 <body>
 <div class="wrap">
-  <h1>🌈 我的心情簽到</h1>
+  <h1 id="ttl">🌈 我的心情簽到</h1>
   <div class="sub" id="today"></div>
   <div class="demo hide" id="demo">⚠️ 目前為「展示模式」，資料只存在這台裝置。設定 GAS_URL 後才會傳給老師。</div>
 
@@ -81,7 +86,7 @@ textarea{resize:vertical}
 
   <div id="formView">
     <div class="card">
-      <p class="step"><span>1</span>找到我的座號，點一下（只顯示座號，保護隱私）</p>
+      <p class="step"><span>1</span><i id="stp1" style="font-style:normal">找到我的座號，點一下（只顯示座號，保護隱私）</i></p>
       <div class="row" id="classRow">
         <select id="grade" aria-label="年級"></select>
         <select id="klass" aria-label="班級"></select>
@@ -93,12 +98,12 @@ textarea{resize:vertical}
     </div>
 
     <div class="card">
-      <p class="step"><span>2</span>此刻，我的心情是哪一個？</p>
+      <p class="step"><span>2</span><i id="stp2" style="font-style:normal">此刻，我的心情是哪一個？</i></p>
       <div id="emotions"></div>
     </div>
 
     <div class="card">
-      <p class="step"><span>3</span>想多說一點嗎？（可以不寫）</p>
+      <p class="step"><span>3</span><i id="stp3" style="font-style:normal">想多說一點嗎？（可以不寫）</i></p>
       <textarea id="note" rows="2" maxlength="120" placeholder="例如：早上和朋友吵架了……"></textarea>
     </div>
 
@@ -153,6 +158,20 @@ const EMOTIONS = [
   {tier:3,color:'red',   em:'😒',name:'嫉妒'},   {tier:3,color:'blue',  em:'😞',name:'失望'},
   {tier:3,color:'yellow',em:'😣',name:'壓力大'}, {tier:3,color:'green', em:'😎',name:'自信自豪'}
 ];
+/* 各年級的畫面風格：底色、主色、標題、步驟用語、卡片版型（big 大卡片／two 兩欄含描述／compact 三欄精簡） */
+const GRADE_STYLE = {
+  1:{page:'#FFF6E3',pri:'#E8800F',title:'🌱 今天的心情',    s1:'點一下，找到你的號碼',   s2:'你現在的心情是哪一個？',   s3:'想說什麼嗎？（可以不寫）',   layout:'big'},
+  2:{page:'#EAF7EE',pri:'#2A9D62',title:'🌼 我的心情小天地',s1:'點一下，找到你的號碼',   s2:'你現在的心情是哪一個？',   s3:'想告訴老師什麼嗎？（可以不寫）', layout:'big'},
+  3:{page:'#F7F7FB',pri:'#4F46E5',title:'🌈 我的心情簽到',  s1:'找到我的座號，點一下',   s2:'此刻，我的心情是哪一個？', s3:'想多說一點嗎？（可以不寫）', layout:'two'},
+  4:{page:'#EAF3FF',pri:'#2F6FDB',title:'🌊 我的心情簽到',  s1:'找到我的座號，點一下',   s2:'此刻，我的心情是哪一個？', s3:'想多說一點嗎？（可以不寫）', layout:'two'},
+  5:{page:'#F3EEFF',pri:'#7048C9',title:'✨ 心情 Check-in', s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'},
+  6:{page:'#EDF1F6',pri:'#334155',title:'🧭 心情 Check-in', s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'}
+};
+function applyStyle(g){
+  const st = GRADE_STYLE[g] || GRADE_STYLE[3], root = document.documentElement.style;
+  root.setProperty('--page', st.page); root.setProperty('--pri', st.pri);
+  $('ttl').textContent = st.title; $('stp1').textContent = st.s1; $('stp2').textContent = st.s2; $('stp3').textContent = st.s3;
+}
 const tierOf = g => g<=2 ? 1 : g<=4 ? 2 : 3;
 
 /* 自我圖式：學生自選的代表圖案 */
@@ -228,7 +247,7 @@ async function loadClass(){
   const g=$('grade').value, k=$('klass').value;
   state.grade = +g||0; state.cls = (g&&k) ? g+k : '';
   state.roster=[]; state.done=[]; state.seat=null; state.emo=null; $('hello').textContent='';
-  renderEmotions();
+  applyStyle(state.grade); renderEmotions();
   if (!state.cls){ $('tiles').innerHTML='<div class="sub">請先選年級</div>'; check(); return; }
   store.set('sel_class',state.cls);
   $('tiles').innerHTML='<div class="sub">載入中…</div>';
@@ -262,12 +281,12 @@ function renderAvatars(){
 }
 function renderEmotions(){
   if (!state.grade){ $('emotions').innerHTML='<div class="sub">先選好年級</div>'; return; }
-  const t = tierOf(state.grade), label = {2:'再多一點的心情', 3:'更細緻的心情'};
+  const t = tierOf(state.grade), label = {2:'再多一點的心情', 3:'更細緻的心情'}, layout = (GRADE_STYLE[state.grade]||{}).layout || 'two';
   const card = e => { const z=SELFaces.ZONE[e.color], f=SELFaces.FACES[e.name];
-    return `<button class="ecard" data-n="${e.name}" style="--bg:${z.card};--fg:${z.text};--st:${z.stroke}">${SELFaces.svg(e.name,t===1?84:52)}<span><b>${e.name}</b><small>${f.desc}</small></span></button>`; };
+    return `<button class="ecard" data-n="${e.name}" style="--bg:${z.card};--fg:${z.text};--st:${z.stroke}">${SELFaces.svg(e.name,layout==='big'?84:layout==='compact'?46:52)}<span><b>${e.name}</b><small>${f.desc}</small></span></button>`; };
   let h='';
   for (let k=1;k<=t;k++){ if (label[k]) h+=`<div class="tier">${label[k]}</div>`; h+=EMOTIONS.filter(e=>e.tier===k).map(card).join(''); }
-  $('emotions').innerHTML = `<div class="egrid ${t===1?'big':''}">${h}</div><div class="egrid-note">每一種心情，都可以在這裡安心停留。</div>`;
+  $('emotions').innerHTML = `<div class="egrid ${layout==='big'?'big':layout==='compact'?'compact':''}">${h}</div><div class="egrid-note">每一種心情，都可以在這裡安心停留。</div>`;
   $('emotions').onclick = e => { const b=e.target.closest('.ecard'); if(!b) return;
     state.emo = EMOTIONS.find(x=>x.name===b.dataset.n);
     document.querySelectorAll('.ecard').forEach(x=>{x.classList.toggle('sel',x===b); x.classList.toggle('dim',x!==b);}); check(); };
