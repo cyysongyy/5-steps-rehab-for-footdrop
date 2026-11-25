@@ -74,9 +74,10 @@ th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertic
 </div>
 
 <script src="stats.js"></script>
+<script src="config.js"></script>
 <script>
 /* ========= 設定 ========= */
-const GAS_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const GAS_URL = window.SEL_GAS_URL || 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';   // 網址在 config.js 設定
 const GRADE_ZH=['','一','二','三','四','五','六'], REFRESH_MS=60000;
 const COLOR={red:'紅·生氣',blue:'藍·沮喪',yellow:'黃·焦慮',green:'綠·平和'};
 /* ========================= */

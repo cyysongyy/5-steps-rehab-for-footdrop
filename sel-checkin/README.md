@@ -15,7 +15,7 @@
 1. 新增一份 Google 試算表 → 擴充功能 → Apps Script → 貼上 `Code.gs`。
 2. 專案設定 → 指令碼屬性 → 新增 `PRINCIPAL_PASSCODE`（校長密碼）。老師密碼不在這裡設，在試算表 `Teachers` 分頁（見下）。
 3. 部署 → 新增部署 → 網頁應用程式 → 執行身分「我」、存取「任何人」→ 複製網址。
-4. 把網址貼到 `index.html`、`teacher.html`、`principal.html` 的 `GAS_URL`，推上 GitHub Pages。
+4. 把網址貼到 `config.js` 的 `SEL_GAS_URL`（三個頁面共用），推上 GitHub Pages。
 5. 另開一個 Apps Script 檔，貼上 `RosterSeed.gs` → 執行 `seedRoster` 一次 → 刪除該檔。名單只存在你的試算表（Roster 分頁），之後增減學生可直接改分頁，或用看板「📋 班級名單」。
 
 未設定 `GAS_URL` 時為展示模式，資料只存在該裝置，方便試玩。

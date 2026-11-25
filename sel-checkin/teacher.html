@@ -78,9 +78,10 @@ textarea.roster{height:240px}
 <div id="modal" class="modal hide"><div id="modalBody"></div></div>
 
 <script src="stats.js"></script>
+<script src="config.js"></script>
 <script>
 /* ========= 設定 ========= */
-const GAS_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const GAS_URL = window.SEL_GAS_URL || 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';   // 網址在 config.js 設定
 const GRADES=[1,2,3,4,5,6], GRADE_ZH=['','一','二','三','四','五','六'], CLASS_NAMES=['甲'], REFRESH_MS=60000;
 const COLOR = {red:{zh:'紅·生氣',p:3},blue:{zh:'藍·沮喪',p:2},yellow:{zh:'黃·焦慮',p:1},green:{zh:'綠·平和',p:0}};
 const FOLLOW_STATUS = ['已關懷','持續追蹤','已轉介輔導','已通知家長','暫不需處理'];
