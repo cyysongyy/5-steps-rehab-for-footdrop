@@ -57,11 +57,12 @@ textarea.roster{height:240px}
   <div class="demo hide" id="demo">⚠️ 展示模式：資料只存在這台裝置（密碼任意）。設定 GAS_URL 後才會讀取全校資料。</div>
   <header>
     <h1>🌈 SEL 情緒看板</h1>
-    <select id="grade"></select><select id="klass"></select>
+    <select id="clsSel"></select>
     <input type="date" id="date">
     <button id="refresh">🔄 重新整理</button>
     <button id="rosterBtn">📋 班級名單</button>
     <button id="csvBtn">⬇ 匯出CSV</button>
+    <a id="pLink" class="hide" href="principal.html" style="color:#fff;font-size:14px">🏫 校長總控台</a>
   </header>
   <div class="wrap">
     <div id="alerts"></div>
@@ -83,7 +84,7 @@ const $=id=>document.getElementById(id), DEMO=GAS_URL.startsWith('YOUR_');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-let PASS='', cls='', data={checkins:[],followups:[],roster:[]}, filter='all', timer=null;
+let ACCESS=null, PASS='', cls='', data={checkins:[],followups:[],roster:[]}, filter='all', timer=null;
 
 async function get(params){
   if(DEMO) return demoGet(params);
@@ -95,6 +96,7 @@ async function post(body){
 }
 /* 展示模式（localStorage，與學生頁同一網域時可看到簽到） */
 function demoGet(p){
+  if(p.action==='login'){const cl=[];GRADES.forEach(g=>CLASS_NAMES.forEach(c=>cl.push(g+c)));return {ok:true,role:'principal',name:'展示',classes:cl}}
   const all=store.get('sel_demo_checkins',[]).filter(c=>c.cls===p.cls);
   if(p.action==='today') return {ok:true,checkins:all.filter(c=>c.date===p.date),followups:store.get('sel_demo_fu',[]).filter(f=>f.cls===p.cls&&f.date===p.date),roster:store.get('sel_roster_'+p.cls,[])};
   if(p.action==='history') return {ok:true,history:all.filter(c=>c.seat==p.seat),followups:store.get('sel_demo_fu',[]).filter(f=>f.cls===p.cls&&f.seat==p.seat)};
@@ -112,31 +114,35 @@ async function login(){
   PASS=$('pass').value; $('loginErr').textContent='';
   if(!PASS) return;
   try{
-    const r=await get({action:'today',cls:'000',date:todayStr()});
+    const r=await get({action:'login'});
     if(!r.ok) throw 0;
+    ACCESS=r;
   }catch(e){ $('loginErr').textContent='密碼錯誤或無法連線'; return; }
   try{sessionStorage.setItem('sel_pass',PASS)}catch(e){}
   start();
 }
+const clsLabel=c=>(GRADE_ZH[c[0]]||c[0])+'年'+c.slice(1)+'班';
 function start(){
   $('loginView').classList.add('hide'); $('app').classList.remove('hide');
   if(DEMO) $('demo').classList.remove('hide');
-  $('grade').innerHTML='<option value="">年級</option>'+GRADES.map(g=>`<option value="${g}">${GRADE_ZH[g]}年級</option>`).join('');
-  $('klass').innerHTML=CLASS_NAMES.map(c=>`<option value="${c}">${c}班</option>`).join('');
-  if(CLASS_NAMES.length===1)$('klass').classList.add('hide');
+  // 老師只看得到自己的班（由後端決定）；校長可看全部並可進總控台
+  if(ACCESS.role==='principal') $('pLink').classList.remove('hide');
+  const list=ACCESS.classes||[];
+  $('clsSel').innerHTML=(list.length>1?'<option value="">選擇班級</option>':'')+list.map(c=>`<option value="${c}">${clsLabel(c)}</option>`).join('');
+  if(list.length<=1)$('clsSel').classList.add('hide');
   $('date').value=todayStr();
   const my=store.get('sel_teacher_class','');
-  if(/^[1-6]./.test(my)){$('grade').value=my[0];if(CLASS_NAMES.includes(my.slice(1)))$('klass').value=my.slice(1)}
-  $('grade').onchange=$('klass').onchange=$('date').onchange=load;
+  if(list.includes(my))$('clsSel').value=my;
+  $('clsSel').onchange=$('date').onchange=load;
   $('refresh').onclick=load; $('rosterBtn').onclick=rosterEditor; $('csvBtn').onclick=exportCsv;
   $('modal').onclick=e=>{if(e.target.id==='modal')closeModal()};
   load(); clearInterval(timer); timer=setInterval(()=>{if(cls&&$('modal').classList.contains('hide'))load()},REFRESH_MS);
 }
-try{const sp=sessionStorage.getItem('sel_pass');if(sp){PASS=sp;get({action:'today',cls:'000',date:todayStr()}).then(r=>{if(r.ok)start()}).catch(()=>{})}}catch(e){}
+try{const sp=sessionStorage.getItem('sel_pass');if(sp){PASS=sp;get({action:'login'}).then(r=>{if(r.ok){ACCESS=r;start()}}).catch(()=>{})}}catch(e){}
 
 async function load(){
-  const g=$('grade').value,k=$('klass').value; cls=(g&&k)?g+k:'';
-  if(!cls){$('grid').innerHTML='<div class="mute">請選擇年級與班級</div>';$('stats').innerHTML='';$('alerts').innerHTML='';return}
+  cls=$('clsSel').value;
+  if(!cls){$('grid').innerHTML='<div class="mute">請選擇班級</div>';$('stats').innerHTML='';$('alerts').innerHTML='';return}
   store.set('sel_teacher_class',cls);
   $('meta').textContent='載入中…';
   try{
@@ -168,7 +174,7 @@ function render(){
   $('stats').onclick=e=>{const c=e.target.closest('.chip');if(c){filter=c.dataset.f;render()}};
   const urgent=L.filter(s=>s.c&&(s.c.color==='red'||(s.c.color==='blue'&&s.c.note))&&!s.fu);
   $('alerts').innerHTML=urgent.length?`<div class="alert">🚨 <b>優先關心（尚未處遇）：</b>${urgent.map(s=>esc(s.seat+'號'+s.name)).join('、')}</div>`:'';
-  $('meta').textContent=`${GRADE_ZH[cls[0]]}${cls.slice(1)}班 · ${$('date').value} · 已簽到 ${L.length-cnt.none}/${L.length} · 更新 ${new Date().toTimeString().slice(0,5)}`;
+  $('meta').textContent=`${clsLabel(cls)} · ${$('date').value} · 已簽到 ${L.length-cnt.none}/${L.length} · 更新 ${new Date().toTimeString().slice(0,5)}`;
   const shown=L.filter(s=>filter==='all'||(filter==='none'?!s.c:s.c&&s.c.color===filter))
     .sort((a,b)=>filter==='all'?(b.pr-a.pr||a.seat-b.seat):a.seat-b.seat);
   $('grid').innerHTML=shown.map(s=>{
@@ -201,7 +207,7 @@ async function openStudent(seat){
     <b>📝 新增處遇紀錄</b>
     <select id="fuStatus">${FOLLOW_STATUS.map(x=>`<option>${x}</option>`).join('')}</select>
     <textarea id="fuNote" rows="3" placeholder="處遇內容、與學生的對話、後續計畫…"></textarea>
-    <input id="fuTeacher" placeholder="教師姓名" value="${esc(store.get('sel_teacher_name',''))}">
+    <input id="fuTeacher" placeholder="教師姓名" value="${esc(store.get('sel_teacher_name','')||(ACCESS&&ACCESS.name)||'')}">
     <div style="display:flex;gap:8px;margin-top:6px"><button class="btn" id="fuSave">儲存</button><button class="btn g" onclick="closeModal()">關閉</button></div>
     ${(h.followups||[]).length?'<div class="mute" style="margin-top:12px">過往處遇</div>'+h.followups.slice(-5).reverse().map(f=>`<div class="log"><b>${esc(f.status)}</b> ${esc(f.time)} ${esc(f.teacher)}<br>${esc(f.note)}</div>`).join(''):''}`);
   $('fuSave').onclick=async()=>{
@@ -217,7 +223,7 @@ function closeModal(){$('modal').classList.add('hide')}
 /* 班級名單 */
 function rosterEditor(){
   if(!cls){alert('請先選班級');return}
-  showModal(`<h3>${GRADE_ZH[cls[0]]}${cls.slice(1)}班名單</h3><div class="mute">每行一位：座號 姓名（例：1 王小明）。學生簽到時會自動帶出姓名，只能選名單內的座號。</div>
+  showModal(`<h3>${clsLabel(cls)}名單</h3><div class="mute">每行一位：座號 姓名（例：1 王小明）。學生簽到時會自動帶出姓名，只能選名單內的座號。</div>
     <textarea class="roster" id="rosterTxt">${esc(data.roster.sort((a,b)=>a.seat-b.seat).map(r=>r.seat+' '+r.name).join('\n'))}</textarea>
     <div style="display:flex;gap:8px"><button class="btn" id="rsSave">儲存名單</button><button class="btn g" onclick="closeModal()">取消</button></div>`);
   $('rsSave').onclick=async()=>{

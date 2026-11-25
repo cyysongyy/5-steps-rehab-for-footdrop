@@ -5,18 +5,25 @@
 | 檔案 | 用途 |
 |---|---|
 | `index.html` | 學生簽到頁（每班一個 QR：`.../sel-checkin/?c=3甲` = 三年甲班） |
-| `teacher.html` | 教師看板（密碼保護） |
+| `teacher.html` | 教師看板：**老師只看得到自己的班**（每班一組密碼） |
+| `principal.html` | 校長總控台：看全校各班與**學生姓名**、優先關心名單、匯出 CSV |
 | `Code.gs` | Google Apps Script 後端，資料存進你的 Google 試算表 |
 | `RosterSeed.gs` | **不在倉庫內**（含學生姓名）。一次性匯入名單到試算表的 Roster 分頁，執行完即刪 |
 
 ## 部署（約 5 分鐘）
 1. 新增一份 Google 試算表 → 擴充功能 → Apps Script → 貼上 `Code.gs`。
-2. 專案設定 → 指令碼屬性 → 新增 `TEACHER_PASSCODE`（教師密碼）。
+2. 專案設定 → 指令碼屬性 → 新增 `PRINCIPAL_PASSCODE`（校長密碼）。老師密碼不在這裡設，在試算表 `Teachers` 分頁（見下）。
 3. 部署 → 新增部署 → 網頁應用程式 → 執行身分「我」、存取「任何人」→ 複製網址。
-4. 把網址貼到 `index.html` 與 `teacher.html` 的 `GAS_URL`，推上 GitHub Pages。
+4. 把網址貼到 `index.html`、`teacher.html`、`principal.html` 的 `GAS_URL`，推上 GitHub Pages。
 5. 另開一個 Apps Script 檔，貼上 `RosterSeed.gs` → 執行 `seedRoster` 一次 → 刪除該檔。名單只存在你的試算表（Roster 分頁），之後增減學生可直接改分頁，或用看板「📋 班級名單」。
 
 未設定 `GAS_URL` 時為展示模式，資料只存在該裝置，方便試玩。
+
+## 權限與隱私
+- **學生頁只顯示座號，不顯示姓名**；後端依座號從 Roster 補上姓名。
+- **老師**：用 `Teachers` 分頁的班級密碼登入，後端只回傳該班資料（即使改網址也看不到別班）。一位老師帶多班，就在該分頁填多列、同一組密碼。
+- **校長**：用 `PRINCIPAL_PASSCODE` 登入 `principal.html`，可看全校含姓名。
+- 試算表本身請只分享給校長；`Teachers` 分頁內有各班密碼。
 
 ## 需要依學校調整
 - `EMOTIONS`（index.html）：12 種情緒，`tier` 1/2/3 對應低/中/高年級（堆疊），各歸屬紅藍黃綠一色；`COLORS`：4 色的緩和策略；

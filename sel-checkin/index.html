@@ -69,7 +69,7 @@ textarea{resize:vertical}
 
   <div id="formView">
     <div class="card">
-      <p class="step"><span>1</span>找到我的座號，點一下</p>
+      <p class="step"><span>1</span>找到我的座號，點一下（只顯示座號，保護隱私）</p>
       <div class="row" id="classRow">
         <select id="grade" aria-label="年級"></select>
         <select id="klass" aria-label="班級"></select>
@@ -161,7 +161,7 @@ async function api(action, data){
   if (DEMO) {                       // 展示模式：存在本機
     if (action==='roster'){
       const done = store.get('sel_demo_checkins',[]).filter(c=>c.cls===data.cls&&c.date===todayStr()).map(c=>c.seat);
-      return {ok:true, roster: store.get('sel_roster_'+data.cls, []), done};
+      return {ok:true, roster: store.get('sel_roster_'+data.cls, []).map(r=>({seat:r.seat})), done};
     }
     if (action==='checkin'){ const a=store.get('sel_demo_checkins',[]); const d=new Date();
       a.push({...data, date:todayStr(), time:d.toTimeString().slice(0,8)}); store.set('sel_demo_checkins',a); return {ok:true}; }
@@ -173,7 +173,7 @@ async function api(action, data){
   return r.json();
 }
 
-let state = {cls:'', grade:0, seat:null, name:'', emo:null, roster:[], done:[]};
+let state = {cls:'', grade:0, seat:null, emo:null, roster:[], done:[]};
 
 function isSchoolDay(){
   const d=new Date();
@@ -204,7 +204,7 @@ function init(){
 async function loadClass(){
   const g=$('grade').value, k=$('klass').value;
   state.grade = +g||0; state.cls = (g&&k) ? g+k : '';
-  state.roster=[]; state.done=[]; state.seat=null; state.name=''; state.emo=null; $('hello').textContent='';
+  state.roster=[]; state.done=[]; state.seat=null; state.emo=null; $('hello').textContent='';
   renderEmotions();
   if (!state.cls){ $('tiles').innerHTML='<div class="sub">請先選年級</div>'; check(); return; }
   store.set('sel_class',state.cls);
@@ -215,10 +215,10 @@ async function loadClass(){
 function renderTiles(){
   if (!state.roster.length){ $('tiles').innerHTML='<div class="sub">這個班級還沒有名單，請老師先匯入。</div>'; return; }
   $('tiles').innerHTML = state.roster.map(r=>
-    `<button class="tile ${state.done.includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}"><span class="no">${r.seat}</span><span class="nm">${esc(r.name)}</span></button>`).join('');
+    `<button class="tile ${state.done.includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}"><span class="no">${r.seat}</span><span class="nm">號</span></button>`).join('');
   $('tiles').onclick = e => { const b=e.target.closest('.tile'); if(!b) return;
-    state.seat=+b.dataset.s; state.name=(state.roster.find(r=>r.seat===state.seat)||{}).name||'';
-    $('hello').textContent = `嗨，${state.name}！`;
+    state.seat=+b.dataset.s;
+    $('hello').textContent = `你選了 ${state.seat} 號`;
     renderTiles(); $('emotions').scrollIntoView({behavior:'smooth',block:'nearest'}); check(); };
 }
 function renderEmotions(){
@@ -242,7 +242,7 @@ async function submit(){
   $('send').disabled = true; $('err').textContent='';
   try{
     const e = state.emo;
-    const r = await api('checkin',{cls:state.cls, seat:state.seat, name:state.name, color:e.color, emotion:e.em+' '+e.name, note:$('note').value.trim()});
+    const r = await api('checkin',{cls:state.cls, seat:state.seat, color:e.color, emotion:e.em+' '+e.name, note:$('note').value.trim()});
     if (!r.ok) throw new Error(r.error||'fail');
     $('note').value='';
     const c = COLORS[e.color];
