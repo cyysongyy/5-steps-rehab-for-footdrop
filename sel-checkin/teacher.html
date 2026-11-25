@@ -77,8 +77,6 @@ textarea.roster{height:240px}
 const GAS_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
 const GRADES=[1,2,3,4,5,6], MAX_CLASS=8, REFRESH_MS=60000;
 const COLOR = {red:{zh:'紅·生氣',p:3},blue:{zh:'藍·沮喪',p:2},yellow:{zh:'黃·焦慮',p:1},green:{zh:'綠·平和',p:0}};
-/* 手勢等級須與 index.html 一致（依文字比對 🆘、🙋、🫶、✋ 即可） */
-const GESTURE_LEVEL = {'🆘':3,'🙋':2,'🫶':2,'✋':1,'👍':0};
 const FOLLOW_STATUS = ['已關懷','持續追蹤','已轉介輔導','已通知家長','暫不需處理'];
 /* ========================= */
 const $=id=>document.getElementById(id), DEMO=GAS_URL.startsWith('YOUR_');
@@ -156,9 +154,8 @@ function latest(){
   const fu={}; data.followups.forEach(f=>{fu[f.seat]=f});
   return [...seats].sort((a,b)=>a-b).map(seat=>{
     const r=data.roster.find(x=>x.seat===seat), c=m[seat];
-    const gl=c?(GESTURE_LEVEL[[...String(c.gesture)][0]]??0):0;
-    const pr=c?Math.max(COLOR[c.color].p,gl):-1;
-    return {seat,name:(r&&r.name)||(c&&c.name)||'',c,gl,pr,fu:fu[seat]};
+    const pr=c?COLOR[c.color].p:-1;
+    return {seat,name:(r&&r.name)||(c&&c.name)||'',c,pr,fu:fu[seat]};
   });
 }
 function render(){
@@ -168,17 +165,17 @@ function render(){
   const chip=(k,label,n)=>`<div class="chip ${k} ${filter===k?'on':''}" data-f="${k}"><b>${n}</b>${label}</div>`;
   $('stats').innerHTML=chip('all','全部',L.length)+chip('red','🔴 生氣',cnt.red)+chip('blue','🔵 沮喪',cnt.blue)+chip('yellow','🟡 焦慮',cnt.yellow)+chip('green','🟢 平和',cnt.green)+chip('none','⚪ 未簽到',cnt.none);
   $('stats').onclick=e=>{const c=e.target.closest('.chip');if(c){filter=c.dataset.f;render()}};
-  const urgent=L.filter(s=>s.c&&(s.gl>=3||(s.c.color==='red'&&s.gl>=2))&&!s.fu);
+  const urgent=L.filter(s=>s.c&&(s.c.color==='red'||(s.c.color==='blue'&&s.c.note))&&!s.fu);
   $('alerts').innerHTML=urgent.length?`<div class="alert">🚨 <b>優先關心（尚未處遇）：</b>${urgent.map(s=>esc(s.seat+'號'+s.name)).join('、')}</div>`:'';
   $('meta').textContent=`${cls} 班 · ${$('date').value} · 已簽到 ${L.length-cnt.none}/${L.length} · 更新 ${new Date().toTimeString().slice(0,5)}`;
   const shown=L.filter(s=>filter==='all'||(filter==='none'?!s.c:s.c&&s.c.color===filter))
     .sort((a,b)=>filter==='all'?(b.pr-a.pr||a.seat-b.seat):a.seat-b.seat);
   $('grid').innerHTML=shown.map(s=>{
     const col=s.c?s.c.color:'';
-    return `<div class="s ${col} ${s.c&&s.gl>=3&&!s.fu?'urgent':''}" data-seat="${s.seat}">
+    return `<div class="s ${col} ${s.c&&s.c.color==='red'&&!s.fu?'urgent':''}" data-seat="${s.seat}">
       ${s.c&&s.c.note?'<span class="badge">💬</span>':''}
       <div class="top"><span>${s.seat}號</span><span>${esc(s.name)}</span></div>
-      <div class="g">${s.c?`${COLOR[col].zh}<br>${esc(s.c.gesture)}`:'<span class="mute">尚未簽到</span>'}</div>
+      <div class="g">${s.c?COLOR[col].zh:'<span class="mute">尚未簽到</span>'}</div>
       ${s.c&&s.c.note?`<div class="n">${esc(s.c.note)}</div>`:''}
       ${s.fu?`<div class="st">✓ ${esc(s.fu.status)}</div>`:''}</div>`}).join('')||'<div class="mute">沒有符合的學生</div>';
   $('grid').onclick=e=>{const c=e.target.closest('.s');if(c)openStudent(+c.dataset.seat)};
@@ -194,7 +191,7 @@ async function openStudent(seat){
   const days=[...Array(14)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')});
   const notes=(h.history||[]).filter(x=>x.note).slice(-5).reverse();
   showModal(`<h3>${seat}號 ${esc(s.name)}</h3>
-    <div>今日：${s.c?`<b>${COLOR[s.c.color].zh}</b> ${esc(s.c.gesture)}`:'<span class="mute">尚未簽到</span>'}</div>
+    <div>今日：${s.c?`<b>${COLOR[s.c.color].zh}</b>`:'<span class="mute">尚未簽到</span>'}</div>
     ${s.c&&s.c.note?`<div style="background:#f3f4f6;padding:8px;border-radius:8px;margin-top:6px">💬 ${esc(s.c.note)}</div>`:''}
     <p class="mute" style="margin:12px 0 0">近 14 天（舊→新，滑過可看日期）</p>
     <div class="hist">${days.map(d=>`<div class="dot ${byDay[d]?byDay[d].color:''}" title="${d}">${d.slice(8)}</div>`).join('')}</div>
@@ -230,8 +227,8 @@ function rosterEditor(){
   };
 }
 function exportCsv(){
-  const rows=[['班級','日期','座號','姓名','顏色','手勢','備註','處遇狀態']];
-  latest().forEach(s=>rows.push([cls,$('date').value,s.seat,s.name,s.c?COLOR[s.c.color].zh:'未簽到',s.c?s.c.gesture:'',s.c?s.c.note:'',s.fu?s.fu.status:'']));
+  const rows=[['班級','日期','座號','姓名','顏色','備註','處遇狀態']];
+  latest().forEach(s=>rows.push([cls,$('date').value,s.seat,s.name,s.c?COLOR[s.c.color].zh:'未簽到',s.c?s.c.note:'',s.fu?s.fu.status:'']));
   const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`SEL_${cls}_${$('date').value}.csv`;a.click();
 }

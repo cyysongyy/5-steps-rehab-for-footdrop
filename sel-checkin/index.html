@@ -26,11 +26,8 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 .cbtn.sel{border-color:#111;transform:scale(1.03);box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .cbtn.dim{opacity:.45}
 .c-red{background:var(--red)}.c-blue{background:var(--blue)}.c-yellow{background:var(--yellow);color:#3a2b00}.c-green{background:var(--green)}
-.gestures{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.gbtn{border:3px solid var(--line);background:#fff;border-radius:14px;padding:10px 2px;cursor:pointer;font-family:inherit;font-size:12px;line-height:1.25;color:var(--ink)}
-.gbtn .em{font-size:30px;display:block}
-.gbtn.sel{border-color:var(--pri);background:#eef2ff}
-.gdesc{margin-top:8px;color:var(--mute);font-size:15px;min-height:22px;text-align:center}
+.sig{background:#fff8e5;border-radius:14px;padding:12px;margin-top:12px;text-align:left}
+.sig b{font-size:18px}
 .go{width:100%;background:var(--pri);color:#fff;border:0;border-radius:16px;padding:16px;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit}
 .go:disabled{background:#c7c9d6}
 .hello{font-size:20px;font-weight:700;text-align:center;color:var(--pri);min-height:28px}
@@ -67,13 +64,7 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
     </div>
 
     <div class="card">
-      <p class="step"><span>3</span>我想用哪個手勢告訴老師？</p>
-      <div class="gestures" id="gestures"></div>
-      <div class="gdesc" id="gdesc">點一個手勢</div>
-    </div>
-
-    <div class="card">
-      <p class="step"><span>4</span>想多說一點嗎？（可以不寫）</p>
+      <p class="step"><span>3</span>想多說一點嗎？（可以不寫）</p>
       <textarea id="note" rows="2" maxlength="120" placeholder="例如：早上和朋友吵架了……"></textarea>
     </div>
 
@@ -86,6 +77,7 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
     <h2 id="dTitle" style="margin:6px 0"></h2>
     <p id="dMsg" style="margin:0"></p>
     <ul class="tips" id="dTips"></ul>
+    <div class="sig" id="dSig"></div>
     <p style="color:var(--mute);font-size:15px">你的老師會看到你的簽到，謝謝你誠實說出感受 💛</p>
     <button class="link" id="again">我的心情改變了，再簽一次</button>
   </div>
@@ -101,25 +93,21 @@ const MAX_SEAT = 35;     // 無名單時的座號上限
 const COLORS = {
   red:   {zh:'紅色', feel:'生氣', emoji:'😠', cls:'c-red',
           msg:'生氣是很正常的情緒，它在提醒你有事情讓你不舒服。',
+          sig:{em:'🧘',name:'靜坐思考',how:'坐穩、雙手放腿上，眼睛輕閉或看前方，深呼吸 5 次。'},
           tips:['做 5 次「汽球呼吸」：吸 4 秒、吐 6 秒','雙手用力握拳 5 秒，再慢慢放鬆','先離開現場喝口水，再決定要怎麼說','想找人聊聊，就告訴老師']},
   blue:  {zh:'藍色', feel:'沮喪', emoji:'😢', cls:'c-blue',
           msg:'難過、沮喪的時候，不用假裝沒事，你並不孤單。',
+          sig:{em:'☝️',name:'我有話要說',how:'舉手、伸出食指，安靜等待，告訴老師你的感受。'},
           tips:['把手放在胸口，深呼吸 3 次','對自己說：「我現在很難過，這是可以的」','找一位信任的人聊聊或抱一抱','做一件讓自己舒服的小事（畫畫、聽音樂）']},
   yellow:{zh:'黃色', feel:'焦慮', emoji:'😰', cls:'c-yellow',
           msg:'緊張、擔心是大腦在保護你，我們一起讓它慢下來。',
+          sig:{em:'↩️',name:'BTT（退一步·想一想·告訴大人）',how:'退一步 → 點點頭腦 → 張開手掌告訴老師你在擔心什麼。'},
           tips:['5-4-3-2-1：說出看到5樣、摸到4樣、聽到3樣東西','慢慢數到 10，再深呼吸','把擔心的事寫下來，交給老師一起想辦法','告訴自己：「一次只做一小步」']},
   green: {zh:'綠色', feel:'平和快樂', emoji:'😊', cls:'c-green',
           msg:'太棒了！記得感謝讓你開心的人事物。',
+          sig:{em:'👌',name:'看著我',how:'保持專注，把好心情用在學習和幫助別人。'},
           tips:['想一件今天讓你感恩的事','把好心情分享給身邊的同學','留意：是什麼讓你今天這麼好？']}
 };
-/* 五種手勢：請依學校實際使用的手勢修改 em / name / desc。level：0=一般 1=需要空間 2=需要陪伴 3=需要立即協助 */
-const GESTURES = [
-  {id:'g1', em:'👍', name:'我OK',     desc:'我現在狀態不錯，可以學習', level:0},
-  {id:'g2', em:'✋', name:'我要暫停', desc:'我需要安靜一下，給我一點時間', level:1},
-  {id:'g3', em:'🫶', name:'需要陪伴', desc:'我想有人陪我，不用說太多話', level:2},
-  {id:'g4', em:'🙋', name:'想找老師', desc:'我想找老師談一談', level:2},
-  {id:'g5', em:'🆘', name:'請幫幫我', desc:'我需要老師現在就來關心我', level:3}
-];
 /* ====================================== */
 
 const $ = id => document.getElementById(id);
@@ -140,7 +128,7 @@ async function api(action, data){
   return r.json();
 }
 
-let state = {cls:'', seat:null, name:'', color:null, gesture:null, roster:[]};
+let state = {cls:'', seat:null, name:'', color:null, roster:[]};
 
 function init(){
   $('today').textContent = new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
@@ -162,11 +150,6 @@ function init(){
   $('colors').onclick = e => { const b=e.target.closest('.cbtn'); if(!b) return; state.color=b.dataset.c;
     document.querySelectorAll('.cbtn').forEach(x=>{x.classList.toggle('sel',x===b); x.classList.toggle('dim',x!==b);}); check(); };
 
-  $('gestures').innerHTML = GESTURES.map(g=>`<button class="gbtn" data-g="${g.id}"><span class="em">${g.em}</span>${g.name}</button>`).join('');
-  $('gestures').onclick = e => { const b=e.target.closest('.gbtn'); if(!b) return; state.gesture=b.dataset.g;
-    document.querySelectorAll('.gbtn').forEach(x=>x.classList.toggle('sel',x===b));
-    $('gdesc').textContent = GESTURES.find(g=>g.id===state.gesture).desc; check(); };
-
   $('seat').onchange = () => { state.seat = +$('seat').value || null;
     const r = state.roster.find(x=>x.seat===state.seat); state.name = r?r.name:'';
     $('hello').textContent = state.name ? `嗨，${state.name}！` : ''; check(); };
@@ -187,22 +170,22 @@ async function loadClass(preSeat){
   if (typeof preSeat==='number' && seats.includes(preSeat)){ $('seat').value=preSeat; $('seat').onchange(); }
   check();
 }
-function check(){ $('send').disabled = !(state.cls && state.seat && state.color && state.gesture); }
+function check(){ $('send').disabled = !(state.cls && state.seat && state.color); }
 function resetChoices(){
-  state.color=null; state.gesture=null; $('note').value=''; $('gdesc').textContent='點一個手勢';
+  state.color=null; $('note').value='';
   document.querySelectorAll('.cbtn').forEach(x=>x.classList.remove('sel','dim'));
-  document.querySelectorAll('.gbtn').forEach(x=>x.classList.remove('sel')); check();
+  check();
 }
 async function submit(){
   $('send').disabled = true; $('err').textContent='';
   try{
-    const g = GESTURES.find(x=>x.id===state.gesture);
-    const r = await api('checkin',{cls:state.cls, seat:state.seat, name:state.name, color:state.color, gesture:g.em+' '+g.name, note:$('note').value.trim()});
+    const r = await api('checkin',{cls:state.cls, seat:state.seat, name:state.name, color:state.color, note:$('note').value.trim()});
     if (!r.ok) throw new Error(r.error||'fail');
     store.set('sel_me',{cls:state.cls, seat:state.seat});
     const c = COLORS[state.color];
     $('dEmoji').textContent=c.emoji; $('dTitle').textContent=`你選了${c.zh}（${c.feel}）`; $('dMsg').textContent=c.msg;
     $('dTips').innerHTML = c.tips.map(t=>`<li>${t}</li>`).join('');
+    $('dSig').innerHTML = `<b>辰光手勢小提醒：${c.sig.em} ${c.sig.name}</b><br>${c.sig.how}`;
     $('formView').classList.add('hide'); $('doneView').classList.remove('hide'); window.scrollTo(0,0);
   }catch(e){ $('err').textContent='送出失敗，請檢查網路後再試一次。'; check(); }
 }
