@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>我的心情簽到</title>
+<style>
+:root{
+  --red:#e5484d; --blue:#3b82f6; --yellow:#f5b301; --green:#2fa86b;
+  --ink:#1f2937; --mute:#6b7280; --bg:#f7f7fb; --card:#fff; --line:#e5e7eb; --pri:#4f46e5;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:18px}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px}
+h1{font-size:24px;margin:8px 0 2px;text-align:center}
+.sub{text-align:center;color:var(--mute);font-size:15px;margin-bottom:14px}
+.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.step{font-weight:700;margin:0 0 10px;font-size:18px}
+.step span{display:inline-block;background:var(--pri);color:#fff;border-radius:50%;width:26px;height:26px;text-align:center;line-height:26px;font-size:15px;margin-right:6px}
+select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--line);border-radius:12px;background:#fff;font-family:inherit}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.colors{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cbtn{border:4px solid transparent;border-radius:18px;padding:16px 8px;color:#fff;font-weight:700;font-size:20px;cursor:pointer;text-align:center;font-family:inherit;line-height:1.3}
+.cbtn .face{font-size:44px;display:block}
+.cbtn small{display:block;font-weight:400;font-size:14px;opacity:.95}
+.cbtn.sel{border-color:#111;transform:scale(1.03);box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.cbtn.dim{opacity:.45}
+.c-red{background:var(--red)}.c-blue{background:var(--blue)}.c-yellow{background:var(--yellow);color:#3a2b00}.c-green{background:var(--green)}
+.gestures{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.gbtn{border:3px solid var(--line);background:#fff;border-radius:14px;padding:10px 2px;cursor:pointer;font-family:inherit;font-size:12px;line-height:1.25;color:var(--ink)}
+.gbtn .em{font-size:30px;display:block}
+.gbtn.sel{border-color:var(--pri);background:#eef2ff}
+.gdesc{margin-top:8px;color:var(--mute);font-size:15px;min-height:22px;text-align:center}
+.go{width:100%;background:var(--pri);color:#fff;border:0;border-radius:16px;padding:16px;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit}
+.go:disabled{background:#c7c9d6}
+.hello{font-size:20px;font-weight:700;text-align:center;color:var(--pri);min-height:28px}
+.done{text-align:center}
+.done .big{font-size:64px}
+.tips{text-align:left;margin:10px 0 0;padding-left:20px;line-height:1.7}
+.link{background:none;border:0;color:var(--pri);font-size:16px;cursor:pointer;text-decoration:underline;font-family:inherit}
+.hide{display:none}
+.demo{background:#fff7ed;color:#9a3412;border-radius:10px;padding:8px 12px;font-size:14px;margin-bottom:12px}
+.err{color:#b91c1c;text-align:center;margin-top:8px;font-size:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🌈 我的心情簽到</h1>
+  <div class="sub" id="today"></div>
+  <div class="demo hide" id="demo">⚠️ 目前為「展示模式」，資料只存在這台裝置。設定 GAS_URL 後才會傳給老師。</div>
+
+  <div id="formView">
+    <div class="card">
+      <p class="step"><span>1</span>我是誰？</p>
+      <div class="row" id="classRow">
+        <select id="grade" aria-label="年級"></select>
+        <select id="klass" aria-label="班級"></select>
+      </div>
+      <div style="height:10px"></div>
+      <select id="seat" aria-label="座號"></select>
+      <div class="hello" id="hello"></div>
+    </div>
+
+    <div class="card">
+      <p class="step"><span>2</span>此刻，我的心情是哪一個顏色？</p>
+      <div class="colors" id="colors"></div>
+    </div>
+
+    <div class="card">
+      <p class="step"><span>3</span>我想用哪個手勢告訴老師？</p>
+      <div class="gestures" id="gestures"></div>
+      <div class="gdesc" id="gdesc">點一個手勢</div>
+    </div>
+
+    <div class="card">
+      <p class="step"><span>4</span>想多說一點嗎？（可以不寫）</p>
+      <textarea id="note" rows="2" maxlength="120" placeholder="例如：早上和朋友吵架了……"></textarea>
+    </div>
+
+    <button class="go" id="send" disabled>送出心情 ✔</button>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div id="doneView" class="card done hide">
+    <div class="big" id="dEmoji"></div>
+    <h2 id="dTitle" style="margin:6px 0"></h2>
+    <p id="dMsg" style="margin:0"></p>
+    <ul class="tips" id="dTips"></ul>
+    <p style="color:var(--mute);font-size:15px">你的老師會看到你的簽到，謝謝你誠實說出感受 💛</p>
+    <button class="link" id="again">我的心情改變了，再簽一次</button>
+  </div>
+</div>
+
+<script>
+/* ========= 設定區（可依學校調整）========= */
+const GAS_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';   // 部署 Code.gs 後貼上網址
+const GRADES = [1,2,3,4,5,6];
+const MAX_CLASS = 8;     // 每年級最多幾班
+const MAX_SEAT = 35;     // 無名單時的座號上限
+
+const COLORS = {
+  red:   {zh:'紅色', feel:'生氣', emoji:'😠', cls:'c-red',
+          msg:'生氣是很正常的情緒，它在提醒你有事情讓你不舒服。',
+          tips:['做 5 次「汽球呼吸」：吸 4 秒、吐 6 秒','雙手用力握拳 5 秒，再慢慢放鬆','先離開現場喝口水，再決定要怎麼說','想找人聊聊，就告訴老師']},
+  blue:  {zh:'藍色', feel:'沮喪', emoji:'😢', cls:'c-blue',
+          msg:'難過、沮喪的時候，不用假裝沒事，你並不孤單。',
+          tips:['把手放在胸口，深呼吸 3 次','對自己說：「我現在很難過，這是可以的」','找一位信任的人聊聊或抱一抱','做一件讓自己舒服的小事（畫畫、聽音樂）']},
+  yellow:{zh:'黃色', feel:'焦慮', emoji:'😰', cls:'c-yellow',
+          msg:'緊張、擔心是大腦在保護你，我們一起讓它慢下來。',
+          tips:['5-4-3-2-1：說出看到5樣、摸到4樣、聽到3樣東西','慢慢數到 10，再深呼吸','把擔心的事寫下來，交給老師一起想辦法','告訴自己：「一次只做一小步」']},
+  green: {zh:'綠色', feel:'平和快樂', emoji:'😊', cls:'c-green',
+          msg:'太棒了！記得感謝讓你開心的人事物。',
+          tips:['想一件今天讓你感恩的事','把好心情分享給身邊的同學','留意：是什麼讓你今天這麼好？']}
+};
+/* 五種手勢：請依學校實際使用的手勢修改 em / name / desc。level：0=一般 1=需要空間 2=需要陪伴 3=需要立即協助 */
+const GESTURES = [
+  {id:'g1', em:'👍', name:'我OK',     desc:'我現在狀態不錯，可以學習', level:0},
+  {id:'g2', em:'✋', name:'我要暫停', desc:'我需要安靜一下，給我一點時間', level:1},
+  {id:'g3', em:'🫶', name:'需要陪伴', desc:'我想有人陪我，不用說太多話', level:2},
+  {id:'g4', em:'🙋', name:'想找老師', desc:'我想找老師談一談', level:2},
+  {id:'g5', em:'🆘', name:'請幫幫我', desc:'我需要老師現在就來關心我', level:3}
+];
+/* ====================================== */
+
+const $ = id => document.getElementById(id);
+const DEMO = GAS_URL.startsWith('YOUR_');
+const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const store = { get(k,d){ try{ return JSON.parse(localStorage.getItem(k))??d }catch(e){ return d } }, set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)) }catch(e){} } };
+
+async function api(action, data){
+  if (DEMO) {                       // 展示模式：存在本機
+    if (action==='roster') return {ok:true, roster: store.get('sel_roster_'+data.cls, [])};
+    if (action==='checkin'){ const a=store.get('sel_demo_checkins',[]); const d=new Date();
+      a.push({...data, date:todayStr(), time:d.toTimeString().slice(0,8)}); store.set('sel_demo_checkins',a); return {ok:true}; }
+  }
+  if (action==='roster'){
+    const r = await fetch(GAS_URL+'?action=roster&cls='+encodeURIComponent(data.cls)); return r.json();
+  }
+  const r = await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...data})});
+  return r.json();
+}
+
+let state = {cls:'', seat:null, name:'', color:null, gesture:null, roster:[]};
+
+function init(){
+  $('today').textContent = new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  if (DEMO) $('demo').classList.remove('hide');
+
+  $('grade').innerHTML = '<option value="">年級</option>'+GRADES.map(g=>`<option value="${g}">${g} 年級</option>`).join('');
+  $('klass').innerHTML = '<option value="">班級</option>'+Array.from({length:MAX_CLASS},(_,i)=>`<option value="${i+1}">${i+1} 班</option>`).join('');
+
+  // 班級 QR code：?c=301（3 年 1 班）
+  const qc = new URLSearchParams(location.search).get('c');
+  const saved = store.get('sel_me', null);
+  let cls = qc || (saved && saved.cls) || '';
+  if (/^\d{3}$/.test(cls)){ $('grade').value = +cls[0]; $('klass').value = +cls.slice(1); }
+  if (qc) $('classRow').classList.add('hide');
+  $('grade').onchange = $('klass').onchange = loadClass;
+
+  $('colors').innerHTML = Object.entries(COLORS).map(([k,c])=>
+    `<button class="cbtn ${c.cls}" data-c="${k}"><span class="face">${c.emoji}</span>${c.zh}<small>${c.feel}</small></button>`).join('');
+  $('colors').onclick = e => { const b=e.target.closest('.cbtn'); if(!b) return; state.color=b.dataset.c;
+    document.querySelectorAll('.cbtn').forEach(x=>{x.classList.toggle('sel',x===b); x.classList.toggle('dim',x!==b);}); check(); };
+
+  $('gestures').innerHTML = GESTURES.map(g=>`<button class="gbtn" data-g="${g.id}"><span class="em">${g.em}</span>${g.name}</button>`).join('');
+  $('gestures').onclick = e => { const b=e.target.closest('.gbtn'); if(!b) return; state.gesture=b.dataset.g;
+    document.querySelectorAll('.gbtn').forEach(x=>x.classList.toggle('sel',x===b));
+    $('gdesc').textContent = GESTURES.find(g=>g.id===state.gesture).desc; check(); };
+
+  $('seat').onchange = () => { state.seat = +$('seat').value || null;
+    const r = state.roster.find(x=>x.seat===state.seat); state.name = r?r.name:'';
+    $('hello').textContent = state.name ? `嗨，${state.name}！` : ''; check(); };
+  $('send').onclick = submit;
+  $('again').onclick = () => { $('doneView').classList.add('hide'); $('formView').classList.remove('hide'); resetChoices(); };
+  loadClass(saved && saved.cls===cls ? saved.seat : null);
+}
+
+async function loadClass(preSeat){
+  const g=$('grade').value, k=$('klass').value;
+  state.cls = (g&&k) ? g+String(k).padStart(2,'0') : '';
+  state.roster=[]; state.seat=null; state.name=''; $('hello').textContent='';
+  if (!state.cls){ $('seat').innerHTML='<option value="">請先選年級與班級</option>'; check(); return; }
+  $('seat').innerHTML='<option value="">載入中…</option>';
+  try{ const r = await api('roster',{cls:state.cls}); state.roster = (r.roster||[]).sort((a,b)=>a.seat-b.seat); }catch(e){ state.roster=[]; }
+  const seats = state.roster.length ? state.roster.map(r=>r.seat) : Array.from({length:MAX_SEAT},(_,i)=>i+1);
+  $('seat').innerHTML = '<option value="">我的座號</option>'+seats.map(s=>`<option value="${s}">${s} 號</option>`).join('');
+  if (typeof preSeat==='number' && seats.includes(preSeat)){ $('seat').value=preSeat; $('seat').onchange(); }
+  check();
+}
+function check(){ $('send').disabled = !(state.cls && state.seat && state.color && state.gesture); }
+function resetChoices(){
+  state.color=null; state.gesture=null; $('note').value=''; $('gdesc').textContent='點一個手勢';
+  document.querySelectorAll('.cbtn').forEach(x=>x.classList.remove('sel','dim'));
+  document.querySelectorAll('.gbtn').forEach(x=>x.classList.remove('sel')); check();
+}
+async function submit(){
+  $('send').disabled = true; $('err').textContent='';
+  try{
+    const g = GESTURES.find(x=>x.id===state.gesture);
+    const r = await api('checkin',{cls:state.cls, seat:state.seat, name:state.name, color:state.color, gesture:g.em+' '+g.name, note:$('note').value.trim()});
+    if (!r.ok) throw new Error(r.error||'fail');
+    store.set('sel_me',{cls:state.cls, seat:state.seat});
+    const c = COLORS[state.color];
+    $('dEmoji').textContent=c.emoji; $('dTitle').textContent=`你選了${c.zh}（${c.feel}）`; $('dMsg').textContent=c.msg;
+    $('dTips').innerHTML = c.tips.map(t=>`<li>${t}</li>`).join('');
+    $('formView').classList.add('hide'); $('doneView').classList.remove('hide'); window.scrollTo(0,0);
+  }catch(e){ $('err').textContent='送出失敗，請檢查網路後再試一次。'; check(); }
+}
+init();
+</script>
+</body>
+</html>

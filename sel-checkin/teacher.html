@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEL 教師看板</title>
+<style>
+:root{--red:#e5484d;--blue:#3b82f6;--yellow:#f5b301;--green:#2fa86b;--none:#9ca3af;--ink:#1f2937;--mute:#6b7280;--bg:#f4f5fa;--line:#e5e7eb;--pri:#4f46e5}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:16px}
+header{background:var(--pri);color:#fff;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+header h1{font-size:19px;margin:0;flex:1;min-width:150px}
+header select,header input,header button{font-size:15px;padding:8px 10px;border-radius:10px;border:0;font-family:inherit}
+header button{background:#fff;color:var(--pri);font-weight:700;cursor:pointer}
+.wrap{max-width:1100px;margin:0 auto;padding:14px}
+.login{max-width:340px;margin:60px auto;background:#fff;padding:24px;border-radius:16px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.login input{width:100%;font-size:18px;padding:12px;border:2px solid var(--line);border-radius:10px;margin:12px 0}
+.login button{width:100%;background:var(--pri);color:#fff;border:0;border-radius:10px;padding:12px;font-size:17px;font-weight:700;cursor:pointer}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chip{flex:1;min-width:84px;border-radius:12px;padding:10px;color:#fff;text-align:center;cursor:pointer;border:3px solid transparent;font-weight:700}
+.chip b{display:block;font-size:26px}.chip.on{border-color:#111}
+.chip.red{background:var(--red)}.chip.blue{background:var(--blue)}.chip.yellow{background:var(--yellow);color:#3a2b00}.chip.green{background:var(--green)}.chip.none{background:var(--none)}.chip.all{background:#374151}
+.alert{background:#fef2f2;border:2px solid var(--red);border-radius:12px;padding:10px 14px;margin-bottom:12px;color:#7f1d1d}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.s{background:#fff;border-radius:14px;padding:10px;border-left:10px solid var(--none);cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.07);position:relative}
+.s.red{border-color:var(--red)}.s.blue{border-color:var(--blue)}.s.yellow{border-color:var(--yellow)}.s.green{border-color:var(--green)}
+.s .top{display:flex;justify-content:space-between;font-weight:700}
+.s .g{font-size:14px;margin-top:4px}.s .n{font-size:13px;color:var(--mute);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s .st{font-size:12px;margin-top:4px;color:#047857}
+.s.urgent{outline:3px solid var(--red)}
+.badge{position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border-radius:10px;font-size:12px;padding:1px 7px;font-weight:700}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:12px;z-index:10}
+.modal>div{background:#fff;border-radius:16px;max-width:520px;width:100%;max-height:92vh;overflow:auto;padding:18px}
+.modal h3{margin:0 0 6px}
+.hist{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}
+.dot{width:30px;height:30px;border-radius:50%;text-align:center;line-height:30px;font-size:11px;color:#fff;background:var(--none)}
+.dot.red{background:var(--red)}.dot.blue{background:var(--blue)}.dot.yellow{background:var(--yellow);color:#3a2b00}.dot.green{background:var(--green)}
+.modal select,.modal textarea,.modal input,.modal textarea{width:100%;font-size:16px;padding:9px;border:2px solid var(--line);border-radius:10px;margin:4px 0;font-family:inherit}
+.btn{background:var(--pri);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn.g{background:#e5e7eb;color:var(--ink)}
+.log{font-size:14px;border-top:1px solid var(--line);padding:6px 0}
+.hide{display:none}.mute{color:var(--mute);font-size:14px}
+textarea.roster{height:240px}
+.demo{background:#fff7ed;color:#9a3412;padding:8px 14px;font-size:14px;text-align:center}
+</style>
+</head>
+<body>
+<div id="loginView" class="login">
+  <h2>🌈 SEL 教師看板</h2>
+  <div class="mute">請輸入教師密碼</div>
+  <input type="password" id="pass" placeholder="教師密碼" autocomplete="current-password">
+  <button id="loginBtn">進入</button>
+  <div id="loginErr" style="color:#b91c1c;margin-top:8px"></div>
+</div>
+
+<div id="app" class="hide">
+  <div class="demo hide" id="demo">⚠️ 展示模式：資料只存在這台裝置（密碼任意）。設定 GAS_URL 後才會讀取全校資料。</div>
+  <header>
+    <h1>🌈 SEL 情緒看板</h1>
+    <select id="grade"></select><select id="klass"></select>
+    <input type="date" id="date">
+    <button id="refresh">🔄 重新整理</button>
+    <button id="rosterBtn">📋 班級名單</button>
+    <button id="csvBtn">⬇ 匯出CSV</button>
+  </header>
+  <div class="wrap">
+    <div id="alerts"></div>
+    <div class="stats" id="stats"></div>
+    <div class="mute" id="meta" style="margin-bottom:8px"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+<div id="modal" class="modal hide"><div id="modalBody"></div></div>
+
+<script>
+/* ========= 設定 ========= */
+const GAS_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const GRADES=[1,2,3,4,5,6], MAX_CLASS=8, REFRESH_MS=60000;
+const COLOR = {red:{zh:'紅·生氣',p:3},blue:{zh:'藍·沮喪',p:2},yellow:{zh:'黃·焦慮',p:1},green:{zh:'綠·平和',p:0}};
+/* 手勢等級須與 index.html 一致（依文字比對 🆘、🙋、🫶、✋ 即可） */
+const GESTURE_LEVEL = {'🆘':3,'🙋':2,'🫶':2,'✋':1,'👍':0};
+const FOLLOW_STATUS = ['已關懷','持續追蹤','已轉介輔導','已通知家長','暫不需處理'];
+/* ========================= */
+const $=id=>document.getElementById(id), DEMO=GAS_URL.startsWith('YOUR_');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+let PASS='', cls='', data={checkins:[],followups:[],roster:[]}, filter='all', timer=null;
+
+async function get(params){
+  if(DEMO) return demoGet(params);
+  const r=await fetch(GAS_URL+'?'+new URLSearchParams({...params,pass:PASS})); return r.json();
+}
+async function post(body){
+  if(DEMO) return demoPost(body);
+  const r=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,pass:PASS})}); return r.json();
+}
+/* 展示模式（localStorage，與學生頁同一網域時可看到簽到） */
+function demoGet(p){
+  const all=store.get('sel_demo_checkins',[]).filter(c=>c.cls===p.cls);
+  if(p.action==='today') return {ok:true,checkins:all.filter(c=>c.date===p.date),followups:store.get('sel_demo_fu',[]).filter(f=>f.cls===p.cls&&f.date===p.date),roster:store.get('sel_roster_'+p.cls,[])};
+  if(p.action==='history') return {ok:true,history:all.filter(c=>c.seat==p.seat),followups:store.get('sel_demo_fu',[]).filter(f=>f.cls===p.cls&&f.seat==p.seat)};
+  return {ok:false};
+}
+function demoPost(b){
+  if(b.action==='saveRoster'){store.set('sel_roster_'+b.cls,b.roster);return {ok:true}}
+  if(b.action==='followup'){const a=store.get('sel_demo_fu',[]);a.push({...b,date:todayStr(),time:new Date().toTimeString().slice(0,8)});store.set('sel_demo_fu',a);return {ok:true}}
+  return {ok:false};
+}
+
+/* 登入 */
+$('loginBtn').onclick=login; $('pass').onkeydown=e=>{if(e.key==='Enter')login()};
+async function login(){
+  PASS=$('pass').value; $('loginErr').textContent='';
+  if(!PASS) return;
+  try{
+    const r=await get({action:'today',cls:'000',date:todayStr()});
+    if(!r.ok) throw 0;
+  }catch(e){ $('loginErr').textContent='密碼錯誤或無法連線'; return; }
+  try{sessionStorage.setItem('sel_pass',PASS)}catch(e){}
+  start();
+}
+function start(){
+  $('loginView').classList.add('hide'); $('app').classList.remove('hide');
+  if(DEMO) $('demo').classList.remove('hide');
+  $('grade').innerHTML='<option value="">年級</option>'+GRADES.map(g=>`<option value="${g}">${g} 年級</option>`).join('');
+  $('klass').innerHTML='<option value="">班級</option>'+Array.from({length:MAX_CLASS},(_,i)=>`<option value="${i+1}">${i+1} 班</option>`).join('');
+  $('date').value=todayStr();
+  const my=store.get('sel_teacher_class','');
+  if(/^\d{3}$/.test(my)){$('grade').value=+my[0];$('klass').value=+my.slice(1)}
+  $('grade').onchange=$('klass').onchange=$('date').onchange=load;
+  $('refresh').onclick=load; $('rosterBtn').onclick=rosterEditor; $('csvBtn').onclick=exportCsv;
+  $('modal').onclick=e=>{if(e.target.id==='modal')closeModal()};
+  load(); clearInterval(timer); timer=setInterval(()=>{if(cls&&$('modal').classList.contains('hide'))load()},REFRESH_MS);
+}
+try{const sp=sessionStorage.getItem('sel_pass');if(sp){PASS=sp;get({action:'today',cls:'000',date:todayStr()}).then(r=>{if(r.ok)start()}).catch(()=>{})}}catch(e){}
+
+async function load(){
+  const g=$('grade').value,k=$('klass').value; cls=(g&&k)?g+String(k).padStart(2,'0'):'';
+  if(!cls){$('grid').innerHTML='<div class="mute">請選擇年級與班級</div>';$('stats').innerHTML='';$('alerts').innerHTML='';return}
+  store.set('sel_teacher_class',cls);
+  $('meta').textContent='載入中…';
+  try{
+    const r=await get({action:'today',cls,date:$('date').value});
+    if(!r.ok) throw new Error(r.error);
+    data=r;
+  }catch(e){ $('meta').textContent='載入失敗：'+e.message; return }
+  render();
+}
+
+/* 每位學生取當日最新一筆；整合名單，未簽到者列出 */
+function latest(){
+  const m={};
+  data.checkins.forEach(c=>{ if(!m[c.seat]||String(c.time)>=String(m[c.seat].time)) m[c.seat]=c });
+  const seats=new Set([...data.roster.map(r=>r.seat),...Object.keys(m).map(Number)]);
+  const fu={}; data.followups.forEach(f=>{fu[f.seat]=f});
+  return [...seats].sort((a,b)=>a-b).map(seat=>{
+    const r=data.roster.find(x=>x.seat===seat), c=m[seat];
+    const gl=c?(GESTURE_LEVEL[[...String(c.gesture)][0]]??0):0;
+    const pr=c?Math.max(COLOR[c.color].p,gl):-1;
+    return {seat,name:(r&&r.name)||(c&&c.name)||'',c,gl,pr,fu:fu[seat]};
+  });
+}
+function render(){
+  const L=latest();
+  const cnt={red:0,blue:0,yellow:0,green:0,none:0};
+  L.forEach(s=>{cnt[s.c?s.c.color:'none']++});
+  const chip=(k,label,n)=>`<div class="chip ${k} ${filter===k?'on':''}" data-f="${k}"><b>${n}</b>${label}</div>`;
+  $('stats').innerHTML=chip('all','全部',L.length)+chip('red','🔴 生氣',cnt.red)+chip('blue','🔵 沮喪',cnt.blue)+chip('yellow','🟡 焦慮',cnt.yellow)+chip('green','🟢 平和',cnt.green)+chip('none','⚪ 未簽到',cnt.none);
+  $('stats').onclick=e=>{const c=e.target.closest('.chip');if(c){filter=c.dataset.f;render()}};
+  const urgent=L.filter(s=>s.c&&(s.gl>=3||(s.c.color==='red'&&s.gl>=2))&&!s.fu);
+  $('alerts').innerHTML=urgent.length?`<div class="alert">🚨 <b>優先關心（尚未處遇）：</b>${urgent.map(s=>esc(s.seat+'號'+s.name)).join('、')}</div>`:'';
+  $('meta').textContent=`${cls} 班 · ${$('date').value} · 已簽到 ${L.length-cnt.none}/${L.length} · 更新 ${new Date().toTimeString().slice(0,5)}`;
+  const shown=L.filter(s=>filter==='all'||(filter==='none'?!s.c:s.c&&s.c.color===filter))
+    .sort((a,b)=>filter==='all'?(b.pr-a.pr||a.seat-b.seat):a.seat-b.seat);
+  $('grid').innerHTML=shown.map(s=>{
+    const col=s.c?s.c.color:'';
+    return `<div class="s ${col} ${s.c&&s.gl>=3&&!s.fu?'urgent':''}" data-seat="${s.seat}">
+      ${s.c&&s.c.note?'<span class="badge">💬</span>':''}
+      <div class="top"><span>${s.seat}號</span><span>${esc(s.name)}</span></div>
+      <div class="g">${s.c?`${COLOR[col].zh}<br>${esc(s.c.gesture)}`:'<span class="mute">尚未簽到</span>'}</div>
+      ${s.c&&s.c.note?`<div class="n">${esc(s.c.note)}</div>`:''}
+      ${s.fu?`<div class="st">✓ ${esc(s.fu.status)}</div>`:''}</div>`}).join('')||'<div class="mute">沒有符合的學生</div>';
+  $('grid').onclick=e=>{const c=e.target.closest('.s');if(c)openStudent(+c.dataset.seat)};
+}
+
+/* 學生詳情 + 處遇紀錄 */
+async function openStudent(seat){
+  const s=latest().find(x=>x.seat===seat);
+  showModal(`<h3>${seat}號 ${esc(s.name)}</h3><div class="mute">載入歷史中…</div>`);
+  let h={history:[],followups:[]};
+  try{h=await get({action:'history',cls,seat,days:14})}catch(e){}
+  const byDay={};(h.history||[]).forEach(x=>{byDay[x.date]=x});
+  const days=[...Array(14)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')});
+  const notes=(h.history||[]).filter(x=>x.note).slice(-5).reverse();
+  showModal(`<h3>${seat}號 ${esc(s.name)}</h3>
+    <div>今日：${s.c?`<b>${COLOR[s.c.color].zh}</b> ${esc(s.c.gesture)}`:'<span class="mute">尚未簽到</span>'}</div>
+    ${s.c&&s.c.note?`<div style="background:#f3f4f6;padding:8px;border-radius:8px;margin-top:6px">💬 ${esc(s.c.note)}</div>`:''}
+    <p class="mute" style="margin:12px 0 0">近 14 天（舊→新，滑過可看日期）</p>
+    <div class="hist">${days.map(d=>`<div class="dot ${byDay[d]?byDay[d].color:''}" title="${d}">${d.slice(8)}</div>`).join('')}</div>
+    ${notes.length?'<div class="mute">近期留言</div>'+notes.map(n=>`<div class="log">${esc(n.date)}：${esc(n.note)}</div>`).join(''):''}
+    <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+    <b>📝 新增處遇紀錄</b>
+    <select id="fuStatus">${FOLLOW_STATUS.map(x=>`<option>${x}</option>`).join('')}</select>
+    <textarea id="fuNote" rows="3" placeholder="處遇內容、與學生的對話、後續計畫…"></textarea>
+    <input id="fuTeacher" placeholder="教師姓名" value="${esc(store.get('sel_teacher_name',''))}">
+    <div style="display:flex;gap:8px;margin-top:6px"><button class="btn" id="fuSave">儲存</button><button class="btn g" onclick="closeModal()">關閉</button></div>
+    ${(h.followups||[]).length?'<div class="mute" style="margin-top:12px">過往處遇</div>'+h.followups.slice(-5).reverse().map(f=>`<div class="log"><b>${esc(f.status)}</b> ${esc(f.time)} ${esc(f.teacher)}<br>${esc(f.note)}</div>`).join(''):''}`);
+  $('fuSave').onclick=async()=>{
+    const t=$('fuTeacher').value.trim(); store.set('sel_teacher_name',t);
+    $('fuSave').disabled=true;
+    const r=await post({action:'followup',cls,seat,name:s.name,status:$('fuStatus').value,note:$('fuNote').value.trim(),teacher:t});
+    if(r.ok){closeModal();load()}else{alert('儲存失敗');$('fuSave').disabled=false}
+  };
+}
+function showModal(h){$('modalBody').innerHTML=h;$('modal').classList.remove('hide')}
+function closeModal(){$('modal').classList.add('hide')}
+
+/* 班級名單 */
+function rosterEditor(){
+  if(!cls){alert('請先選班級');return}
+  showModal(`<h3>${cls} 班名單</h3><div class="mute">每行一位：座號 姓名（例：1 王小明）。學生簽到時會自動帶出姓名，只能選名單內的座號。</div>
+    <textarea class="roster" id="rosterTxt">${esc(data.roster.sort((a,b)=>a.seat-b.seat).map(r=>r.seat+' '+r.name).join('\n'))}</textarea>
+    <div style="display:flex;gap:8px"><button class="btn" id="rsSave">儲存名單</button><button class="btn g" onclick="closeModal()">取消</button></div>`);
+  $('rsSave').onclick=async()=>{
+    const roster=$('rosterTxt').value.split('\n').map(l=>l.trim().match(/^(\d+)[\s,，、]+(.+)$/)).filter(Boolean).map(m=>({seat:+m[1],name:m[2].trim()}));
+    if(!roster.length&&!confirm('名單是空的，確定要清空嗎？'))return;
+    const r=await post({action:'saveRoster',cls,roster});
+    if(r.ok){closeModal();load()}else alert('儲存失敗');
+  };
+}
+function exportCsv(){
+  const rows=[['班級','日期','座號','姓名','顏色','手勢','備註','處遇狀態']];
+  latest().forEach(s=>rows.push([cls,$('date').value,s.seat,s.name,s.c?COLOR[s.c.color].zh:'未簽到',s.c?s.c.gesture:'',s.c?s.c.note:'',s.fu?s.fu.status:'']));
+  const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`SEL_${cls}_${$('date').value}.csv`;a.click();
+}
+</script>
+</body>
+</html>
