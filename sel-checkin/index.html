@@ -21,13 +21,14 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 .row{display:flex;gap:10px}.row>*{flex:1}
 /* 班級座號圖卡 */
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
-.tile{position:relative;border:3px solid var(--line);background:#fff;border-radius:16px;padding:10px 4px;text-align:center;cursor:pointer;font-family:inherit;color:var(--ink)}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;position:relative;border:3px solid var(--line);background:#fff;border-radius:16px;padding:10px 4px;text-align:center;cursor:pointer;font-family:inherit;color:var(--ink)}
 .tile .no{display:block;font-size:28px;font-weight:800;color:var(--pri);line-height:1.1}
 .tile .nm{display:block;font-size:16px;margin-top:2px}
 .tile.sel{border-color:var(--pri);background:#eef2ff;transform:scale(1.04)}
 .tile.done::after{content:"✓ 今天已簽到";position:absolute;left:0;right:0;bottom:-1px;font-size:11px;color:#047857;background:#d1fae5;border-radius:0 0 12px 12px}
 .tile.done{padding-bottom:20px}
-.tile .av{display:flex;width:48px;height:48px;margin:0 auto 2px;border-radius:50%;align-items:center;justify-content:center;font-size:29px;line-height:1;background:var(--abg,#FFF4C7)}
+.tile .av{display:flex;width:48px;height:48px;margin:6px auto 0;border-radius:50%;align-items:center;justify-content:center;font-size:29px;line-height:1;background:var(--abg,#FFF4C7)}
+.tile .av.ph{background:transparent;border:2px dashed #cbd5e1;color:#94a3b8;font-size:22px}
 .avc{display:inline-flex;width:34px;height:34px;border-radius:50%;align-items:center;justify-content:center;font-size:21px;vertical-align:middle;background:var(--abg,#FFF4C7)}
 .tile .no{font-size:20px}
 .apick{background:#fff8e5;border-radius:14px;padding:10px;margin-top:10px}
@@ -258,7 +259,7 @@ async function loadClass(){
 function renderTiles(){
   if (!state.roster.length){ $('tiles').innerHTML='<div class="sub">這個班級還沒有名單，請老師先匯入。</div>'; return; }
   $('tiles').innerHTML = state.roster.map(r=>
-    `<button class="tile ${state.done.includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}">${r.avatar?`<span class="av" style="--abg:${abg(r.seat)}">${esc(r.avatar)}</span>`:''}<span class="no">${r.seat}</span><span class="nm">號</span></button>`).join('');
+    `<button class="tile ${state.done.includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}"><span class="no">${r.seat}</span><span class="nm">號</span>${r.avatar?`<span class="av" style="--abg:${abg(r.seat)}">${esc(r.avatar)}</span>`:'<span class="av ph">＋</span>'}</button>`).join('');
   $('tiles').onclick = e => { const b=e.target.closest('.tile'); if(!b) return;
     state.seat=+b.dataset.s;
     showHello(); renderTiles(); $('emotions').scrollIntoView({behavior:'smooth',block:'nearest'}); check(); };
