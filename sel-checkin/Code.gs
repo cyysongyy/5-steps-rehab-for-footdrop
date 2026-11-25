@@ -5,13 +5,13 @@
  *      → 部署 → 新增部署 → 網頁應用程式 → 執行身分：我；存取：任何人 → 複製網址
  *
  * 工作表（首次執行自動建立）：
- *   Checkins  : id, 時間, 日期, 班級, 座號, 姓名, 顏色, 備註
- *   Roster    : 班級, 座號, 姓名
+ *   Checkins  : id, 時間, 日期, 班級, 座號, 姓名, 顏色, 情緒, 備註
+ *   Roster    : 班級（例：3甲）, 座號, 姓名  ← 名單放這裡，用 RosterSeed.gs 一次匯入
  *   Followups : 時間, 日期, 班級, 座號, 姓名, 狀態, 處遇紀錄, 教師
  */
 var COLORS = ['red', 'blue', 'yellow', 'green'];
 var SHEETS = {
-  Checkins: ['id', '時間', '日期', '班級', '座號', '姓名', '顏色', '備註'],
+  Checkins: ['id', '時間', '日期', '班級', '座號', '姓名', '顏色', '情緒', '備註'],
   Roster: ['班級', '座號', '姓名'],
   Followups: ['時間', '日期', '班級', '座號', '姓名', '狀態', '處遇紀錄', '教師']
 };
@@ -57,7 +57,12 @@ function doGet(e) {
     if (a === 'roster') {
       var list = rows_('Roster').filter(function (r) { return String(r['班級']) === String(p.cls); })
         .map(function (r) { return { seat: Number(r['座號']), name: r['姓名'] }; });
-      return out_({ ok: true, roster: list });
+      // 只回傳今天已簽到的座號（不含顏色），讓班級圖卡顯示 ✓
+      var d0 = today_();
+      var done = rows_('Checkins').filter(function (r) {
+        return String(r['班級']) === String(p.cls) && dateStr_(r['日期']) === d0;
+      }).map(function (r) { return Number(r['座號']); });
+      return out_({ ok: true, roster: list, done: done });
     }
     // 以下為教師端
     if (!authed_(p.pass)) return out_({ ok: false, error: 'auth' });
@@ -67,7 +72,7 @@ function doGet(e) {
         return String(r['班級']) === String(p.cls) && dateStr_(r['日期']) === d;
       }).map(function (r) {
         return { id: r.id, time: String(r['時間']), seat: Number(r['座號']), name: r['姓名'],
-                 color: r['顏色'], note: r['備註'] };
+                 color: r['顏色'], emotion: r['情緒'], note: r['備註'] };
       });
       var fu = rows_('Followups').filter(function (r) {
         return String(r['班級']) === String(p.cls) && dateStr_(r['日期']) === d;
@@ -82,7 +87,7 @@ function doGet(e) {
       var h = rows_('Checkins').filter(function (r) {
         return String(r['班級']) === String(p.cls) && Number(r['座號']) === Number(p.seat) && dateStr_(r['日期']) >= lim;
       }).map(function (r) {
-        return { date: dateStr_(r['日期']), time: String(r['時間']), color: r['顏色'], note: r['備註'] };
+        return { date: dateStr_(r['日期']), time: String(r['時間']), color: r['顏色'], emotion: r['情緒'], note: r['備註'] };
       });
       var f = rows_('Followups').filter(function (r) {
         return String(r['班級']) === String(p.cls) && Number(r['座號']) === Number(p.seat);
@@ -114,7 +119,7 @@ function doPost(e) {
       var me = rosterOf_(cls).filter(function (r) { return r.seat === seat; })[0];
       var name = me ? me.name : str_(b.name, 20);
       sheet_('Checkins').appendRow([Utilities.getUuid(), now_(), today_(), cls, seat, name,
-        b.color, str_(b.note, 200)]);
+        b.color, str_(b.emotion, 30), str_(b.note, 200)]);
       return out_({ ok: true });
     }
     if (!authed_(b.pass)) return out_({ ok: false, error: 'auth' });

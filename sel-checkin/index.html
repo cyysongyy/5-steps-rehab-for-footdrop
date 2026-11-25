@@ -11,7 +11,7 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:18px}
-.wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px}
+.wrap{max-width:640px;margin:0 auto;padding:16px 16px 40px}
 h1{font-size:24px;margin:8px 0 2px;text-align:center}
 .sub{text-align:center;color:var(--mute);font-size:15px;margin-bottom:14px}
 .card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
@@ -19,13 +19,35 @@ h1{font-size:24px;margin:8px 0 2px;text-align:center}
 .step span{display:inline-block;background:var(--pri);color:#fff;border-radius:50%;width:26px;height:26px;text-align:center;line-height:26px;font-size:15px;margin-right:6px}
 select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--line);border-radius:12px;background:#fff;font-family:inherit}
 .row{display:flex;gap:10px}.row>*{flex:1}
-.colors{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.cbtn{border:4px solid transparent;border-radius:18px;padding:16px 8px;color:#fff;font-weight:700;font-size:20px;cursor:pointer;text-align:center;font-family:inherit;line-height:1.3}
-.cbtn .face{font-size:44px;display:block}
-.cbtn small{display:block;font-weight:400;font-size:14px;opacity:.95}
-.cbtn.sel{border-color:#111;transform:scale(1.03);box-shadow:0 4px 14px rgba(0,0,0,.3)}
-.cbtn.dim{opacity:.45}
-.c-red{background:var(--red)}.c-blue{background:var(--blue)}.c-yellow{background:var(--yellow);color:#3a2b00}.c-green{background:var(--green)}
+/* 班級座號圖卡 */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.tile{position:relative;border:3px solid var(--line);background:#fff;border-radius:16px;padding:10px 4px;text-align:center;cursor:pointer;font-family:inherit;color:var(--ink)}
+.tile .no{display:block;font-size:28px;font-weight:800;color:var(--pri);line-height:1.1}
+.tile .nm{display:block;font-size:16px;margin-top:2px}
+.tile.sel{border-color:var(--pri);background:#eef2ff;transform:scale(1.04)}
+.tile.done::after{content:"✓ 今天已簽到";position:absolute;left:0;right:0;bottom:-1px;font-size:11px;color:#047857;background:#d1fae5;border-radius:0 0 12px 12px}
+.tile.done{padding-bottom:20px}
+.hello{font-size:20px;font-weight:700;text-align:center;color:var(--pri);min-height:28px;margin-top:10px}
+/* 情緒：依顏色分組，年級堆疊 4 / 8 / 12 種 */
+.zone{border-radius:16px;padding:10px;margin-bottom:10px}
+.zone h3{margin:0 0 8px;font-size:16px;color:#fff}
+.z-red{background:var(--red)}.z-blue{background:var(--blue)}.z-yellow{background:var(--yellow)}.z-yellow h3{color:#3a2b00}.z-green{background:var(--green)}
+.ebtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.ebtn{border:4px solid transparent;background:#fff;border-radius:14px;padding:8px 2px;cursor:pointer;font-family:inherit;font-size:16px;font-weight:700;color:var(--ink);line-height:1.25}
+.ebtn .face{font-size:38px;display:block}
+.ebtn.sel{border-color:#111;transform:scale(1.05);box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.ebtn.dim{opacity:.5}
+textarea{resize:vertical}
+.go{width:100%;background:var(--pri);color:#fff;border:0;border-radius:16px;padding:16px;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit}
+.go:disabled{background:#c7c9d6}
+.done-view{text-align:center}
+.big{font-size:64px}
+.tips{text-align:left;margin:10px 0 0;padding-left:20px;line-height:1.7}
+.link{background:none;border:0;color:var(--pri);font-size:16px;cursor:pointer;text-decoration:underline;font-family:inherit}
+.hide{display:none}
+.demo{background:#fff7ed;color:#9a3412;border-radius:10px;padding:8px 12px;font-size:14px;margin-bottom:12px}
+.closed{background:#eef2ff;border-radius:14px;padding:20px;text-align:center}
+.err{color:#b91c1c;text-align:center;margin-top:8px;font-size:15px}
 .sigs{margin-top:14px;text-align:left}
 .sigs h3{font-size:16px;margin:0 0 8px;text-align:center}
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -33,16 +55,6 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 .sc:last-child{grid-column:1/-1}
 .sc img{display:block;width:100%;height:96px;object-fit:contain;background:#3f281f;border-radius:8px;margin-bottom:6px}
 .sc b{font-size:15px;display:block}
-.go{width:100%;background:var(--pri);color:#fff;border:0;border-radius:16px;padding:16px;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit}
-.go:disabled{background:#c7c9d6}
-.hello{font-size:20px;font-weight:700;text-align:center;color:var(--pri);min-height:28px}
-.done{text-align:center}
-.done .big{font-size:64px}
-.tips{text-align:left;margin:10px 0 0;padding-left:20px;line-height:1.7}
-.link{background:none;border:0;color:var(--pri);font-size:16px;cursor:pointer;text-decoration:underline;font-family:inherit}
-.hide{display:none}
-.demo{background:#fff7ed;color:#9a3412;border-radius:10px;padding:8px 12px;font-size:14px;margin-bottom:12px}
-.err{color:#b91c1c;text-align:center;margin-top:8px;font-size:15px}
 </style>
 </head>
 <body>
@@ -51,21 +63,25 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
   <div class="sub" id="today"></div>
   <div class="demo hide" id="demo">⚠️ 目前為「展示模式」，資料只存在這台裝置。設定 GAS_URL 後才會傳給老師。</div>
 
+  <div id="closedView" class="closed hide">
+    <div class="big">🏡</div><h2>今天不是上課日</h2><p>上課日再來告訴老師你的心情吧！</p>
+  </div>
+
   <div id="formView">
     <div class="card">
-      <p class="step"><span>1</span>我是誰？</p>
+      <p class="step"><span>1</span>找到我的座號，點一下</p>
       <div class="row" id="classRow">
         <select id="grade" aria-label="年級"></select>
         <select id="klass" aria-label="班級"></select>
       </div>
       <div style="height:10px"></div>
-      <select id="seat" aria-label="座號"></select>
+      <div class="tiles" id="tiles"></div>
       <div class="hello" id="hello"></div>
     </div>
 
     <div class="card">
-      <p class="step"><span>2</span>此刻，我的心情是哪一個顏色？</p>
-      <div class="colors" id="colors"></div>
+      <p class="step"><span>2</span>此刻，我的心情是哪一個？</p>
+      <div id="emotions"></div>
     </div>
 
     <div class="card">
@@ -77,14 +93,14 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
     <div class="err" id="err"></div>
   </div>
 
-  <div id="doneView" class="card done hide">
+  <div id="doneView" class="card done-view hide">
     <div class="big" id="dEmoji"></div>
     <h2 id="dTitle" style="margin:6px 0"></h2>
     <p id="dMsg" style="margin:0"></p>
     <ul class="tips" id="dTips"></ul>
     <div class="sigs"><h3>🌅 辰光五個手勢（全校共同訊號）</h3><div class="sgrid" id="dSig"></div></div>
     <p style="color:var(--mute);font-size:15px">你的老師會看到你的簽到，謝謝你誠實說出感受 💛</p>
-    <button class="link" id="again">我的心情改變了，再簽一次</button>
+    <button class="link" id="again">回到名單（換下一位同學）</button>
   </div>
 </div>
 
@@ -92,9 +108,39 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 /* ========= 設定區（可依學校調整）========= */
 const GAS_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';   // 部署 Code.gs 後貼上網址
 const GRADES = [1,2,3,4,5,6];
-const MAX_CLASS = 8;     // 每年級最多幾班
-const MAX_SEAT = 35;     // 無名單時的座號上限
+const GRADE_ZH = ['','一','二','三','四','五','六'];
+const CLASS_NAMES = ['甲'];                  // 本校每年級只有「甲」班；有增班再加：['甲','乙']
+const SCHOOL_DAYS = [1,2,3,4,5];             // 週一到週五
+const HOLIDAYS = [];                         // 放假日，例如 '2026-12-25'
 
+/* 四個顏色（區）與緩和策略 */
+const COLORS = {
+  red:   {zh:'紅色', feel:'生氣',     emoji:'😠',
+          msg:'生氣是很正常的情緒，它在提醒你有事情讓你不舒服。',
+          tips:['做 5 次「汽球呼吸」：吸 4 秒、吐 6 秒','雙手用力握拳 5 秒，再慢慢放鬆','先離開現場喝口水，再決定要怎麼說','想找人聊聊，就告訴老師']},
+  blue:  {zh:'藍色', feel:'沮喪',     emoji:'😢',
+          msg:'難過、沮喪的時候，不用假裝沒事，你並不孤單。',
+          tips:['把手放在胸口，深呼吸 3 次','對自己說：「我現在很難過，這是可以的」','找一位信任的人聊聊或抱一抱','做一件讓自己舒服的小事（畫畫、聽音樂）']},
+  yellow:{zh:'黃色', feel:'焦慮',     emoji:'😰',
+          msg:'緊張、擔心是大腦在保護你，我們一起讓它慢下來。',
+          tips:['5-4-3-2-1：說出看到5樣、摸到4樣、聽到3樣東西','慢慢數到 10，再深呼吸','把擔心的事寫下來，交給老師一起想辦法','告訴自己：「一次只做一小步」']},
+  green: {zh:'綠色', feel:'平和快樂', emoji:'😊',
+          msg:'太棒了！記得感謝讓你開心的人事物。',
+          tips:['想一件今天讓你感恩的事','把好心情分享給身邊的同學','留意：是什麼讓你今天這麼好？']}
+};
+/* 情緒清單（堆疊）：tier 1＝低年級(1-2年級)；tier 2＝中年級加(3-4)；tier 3＝高年級再加(5-6)
+   1-2年級看到 4 種、3-4年級 8 種、5-6年級 12 種。名稱與表情可自行調整。 */
+const EMOTIONS = [
+  {tier:1,color:'red',   em:'😠',name:'生氣'},   {tier:1,color:'blue',  em:'😢',name:'沮喪'},
+  {tier:1,color:'yellow',em:'😰',name:'焦慮'},   {tier:1,color:'green', em:'😊',name:'平和快樂'},
+  {tier:2,color:'red',   em:'😤',name:'挫折'},   {tier:2,color:'blue',  em:'🥺',name:'孤單'},
+  {tier:2,color:'yellow',em:'😨',name:'害怕'},   {tier:2,color:'green', em:'🤩',name:'開心興奮'},
+  {tier:3,color:'red',   em:'😒',name:'嫉妒'},   {tier:3,color:'blue',  em:'😞',name:'失望'},
+  {tier:3,color:'yellow',em:'😣',name:'壓力大'}, {tier:3,color:'green', em:'😎',name:'自信自豪'}
+];
+const tierOf = g => g<=2 ? 1 : g<=4 ? 2 : 3;
+
+/* 辰光五手勢（全校共同訊號，圖片放在 img/） */
 const SIGNALS = [
   {img:'img/sig1.webp', name:'安靜手勢',   use:'看到這個手勢，全班停下聲音並看向老師。'},
   {img:'img/sig2.webp', name:'我有話要說', use:'想發言或需要告訴老師事情時使用。'},
@@ -102,30 +148,21 @@ const SIGNALS = [
   {img:'img/sig4.webp', name:'看著我',     use:'老師說 Eyes on me，你回 Eyes on you。'},
   {img:'img/sig5.webp', name:'靜坐思考',   use:'需要安定心情時，安靜坐好。'}
 ];
-const COLORS = {
-  red:   {zh:'紅色', feel:'生氣', emoji:'😠', cls:'c-red',
-          msg:'生氣是很正常的情緒，它在提醒你有事情讓你不舒服。',
-          tips:['做 5 次「汽球呼吸」：吸 4 秒、吐 6 秒','雙手用力握拳 5 秒，再慢慢放鬆','先離開現場喝口水，再決定要怎麼說','想找人聊聊，就告訴老師']},
-  blue:  {zh:'藍色', feel:'沮喪', emoji:'😢', cls:'c-blue',
-          msg:'難過、沮喪的時候，不用假裝沒事，你並不孤單。',
-          tips:['把手放在胸口，深呼吸 3 次','對自己說：「我現在很難過，這是可以的」','找一位信任的人聊聊或抱一抱','做一件讓自己舒服的小事（畫畫、聽音樂）']},
-  yellow:{zh:'黃色', feel:'焦慮', emoji:'😰', cls:'c-yellow',
-          msg:'緊張、擔心是大腦在保護你，我們一起讓它慢下來。',
-          tips:['5-4-3-2-1：說出看到5樣、摸到4樣、聽到3樣東西','慢慢數到 10，再深呼吸','把擔心的事寫下來，交給老師一起想辦法','告訴自己：「一次只做一小步」']},
-  green: {zh:'綠色', feel:'平和快樂', emoji:'😊', cls:'c-green',
-          msg:'太棒了！記得感謝讓你開心的人事物。',
-          tips:['想一件今天讓你感恩的事','把好心情分享給身邊的同學','留意：是什麼讓你今天這麼好？']}
-};
 /* ====================================== */
 
 const $ = id => document.getElementById(id);
 const DEMO = GAS_URL.startsWith('YOUR_');
-const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const pad = n => String(n).padStart(2,'0');
+const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store = { get(k,d){ try{ return JSON.parse(localStorage.getItem(k))??d }catch(e){ return d } }, set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)) }catch(e){} } };
 
 async function api(action, data){
   if (DEMO) {                       // 展示模式：存在本機
-    if (action==='roster') return {ok:true, roster: store.get('sel_roster_'+data.cls, [])};
+    if (action==='roster'){
+      const done = store.get('sel_demo_checkins',[]).filter(c=>c.cls===data.cls&&c.date===todayStr()).map(c=>c.seat);
+      return {ok:true, roster: store.get('sel_roster_'+data.cls, []), done};
+    }
     if (action==='checkin'){ const a=store.get('sel_demo_checkins',[]); const d=new Date();
       a.push({...data, date:todayStr(), time:d.toTimeString().slice(0,8)}); store.set('sel_demo_checkins',a); return {ok:true}; }
   }
@@ -136,62 +173,80 @@ async function api(action, data){
   return r.json();
 }
 
-let state = {cls:'', seat:null, name:'', color:null, roster:[]};
+let state = {cls:'', grade:0, seat:null, name:'', emo:null, roster:[], done:[]};
+
+function isSchoolDay(){
+  const d=new Date();
+  return SCHOOL_DAYS.includes(d.getDay()) && !HOLIDAYS.includes(todayStr());
+}
 
 function init(){
   $('today').textContent = new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
   if (DEMO) $('demo').classList.remove('hide');
+  if (!isSchoolDay()){ $('formView').classList.add('hide'); $('closedView').classList.remove('hide'); return; }
 
-  $('grade').innerHTML = '<option value="">年級</option>'+GRADES.map(g=>`<option value="${g}">${g} 年級</option>`).join('');
-  $('klass').innerHTML = '<option value="">班級</option>'+Array.from({length:MAX_CLASS},(_,i)=>`<option value="${i+1}">${i+1} 班</option>`).join('');
+  $('grade').innerHTML = '<option value="">年級</option>'+GRADES.map(g=>`<option value="${g}">${GRADE_ZH[g]}年級</option>`).join('');
+  $('klass').innerHTML = CLASS_NAMES.map(c=>`<option value="${c}">${c}班</option>`).join('');
+  if (CLASS_NAMES.length===1) $('klass').classList.add('hide');
 
-  // 班級 QR code：?c=301（3 年 1 班）
+  // 班級 QR：?c=3甲（三年甲班）。沒帶參數時讓學生自己選，並記住上次的班級
   const qc = new URLSearchParams(location.search).get('c');
-  const saved = store.get('sel_me', null);
-  let cls = qc || (saved && saved.cls) || '';
-  if (/^\d{3}$/.test(cls)){ $('grade').value = +cls[0]; $('klass').value = +cls.slice(1); }
-  if (qc) $('classRow').classList.add('hide');
+  const cls = qc || store.get('sel_class','');
+  const m = /^([1-6])(.+)$/.exec(cls||'');
+  if (m){ $('grade').value=m[1]; if (CLASS_NAMES.includes(m[2])) $('klass').value=m[2]; }
+  if (qc && m) $('classRow').classList.add('hide');
   $('grade').onchange = $('klass').onchange = loadClass;
-
-  $('colors').innerHTML = Object.entries(COLORS).map(([k,c])=>
-    `<button class="cbtn ${c.cls}" data-c="${k}"><span class="face">${c.emoji}</span>${c.zh}<small>${c.feel}</small></button>`).join('');
-  $('colors').onclick = e => { const b=e.target.closest('.cbtn'); if(!b) return; state.color=b.dataset.c;
-    document.querySelectorAll('.cbtn').forEach(x=>{x.classList.toggle('sel',x===b); x.classList.toggle('dim',x!==b);}); check(); };
-
-  $('seat').onchange = () => { state.seat = +$('seat').value || null;
-    const r = state.roster.find(x=>x.seat===state.seat); state.name = r?r.name:'';
-    $('hello').textContent = state.name ? `嗨，${state.name}！` : ''; check(); };
   $('send').onclick = submit;
-  $('again').onclick = () => { $('doneView').classList.add('hide'); $('formView').classList.remove('hide'); resetChoices(); };
-  loadClass(saved && saved.cls===cls ? saved.seat : null);
+  $('again').onclick = backToList;
+  loadClass();
 }
 
-async function loadClass(preSeat){
+async function loadClass(){
   const g=$('grade').value, k=$('klass').value;
-  state.cls = (g&&k) ? g+String(k).padStart(2,'0') : '';
-  state.roster=[]; state.seat=null; state.name=''; $('hello').textContent='';
-  if (!state.cls){ $('seat').innerHTML='<option value="">請先選年級與班級</option>'; check(); return; }
-  $('seat').innerHTML='<option value="">載入中…</option>';
-  try{ const r = await api('roster',{cls:state.cls}); state.roster = (r.roster||[]).sort((a,b)=>a.seat-b.seat); }catch(e){ state.roster=[]; }
-  const seats = state.roster.length ? state.roster.map(r=>r.seat) : Array.from({length:MAX_SEAT},(_,i)=>i+1);
-  $('seat').innerHTML = '<option value="">我的座號</option>'+seats.map(s=>`<option value="${s}">${s} 號</option>`).join('');
-  if (typeof preSeat==='number' && seats.includes(preSeat)){ $('seat').value=preSeat; $('seat').onchange(); }
-  check();
+  state.grade = +g||0; state.cls = (g&&k) ? g+k : '';
+  state.roster=[]; state.done=[]; state.seat=null; state.name=''; state.emo=null; $('hello').textContent='';
+  renderEmotions();
+  if (!state.cls){ $('tiles').innerHTML='<div class="sub">請先選年級</div>'; check(); return; }
+  store.set('sel_class',state.cls);
+  $('tiles').innerHTML='<div class="sub">載入中…</div>';
+  try{ const r = await api('roster',{cls:state.cls}); state.roster=(r.roster||[]).sort((a,b)=>a.seat-b.seat); state.done=r.done||[]; }catch(e){}
+  renderTiles(); check();
 }
-function check(){ $('send').disabled = !(state.cls && state.seat && state.color); }
-function resetChoices(){
-  state.color=null; $('note').value='';
-  document.querySelectorAll('.cbtn').forEach(x=>x.classList.remove('sel','dim'));
-  check();
+function renderTiles(){
+  if (!state.roster.length){ $('tiles').innerHTML='<div class="sub">這個班級還沒有名單，請老師先匯入。</div>'; return; }
+  $('tiles').innerHTML = state.roster.map(r=>
+    `<button class="tile ${state.done.includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}"><span class="no">${r.seat}</span><span class="nm">${esc(r.name)}</span></button>`).join('');
+  $('tiles').onclick = e => { const b=e.target.closest('.tile'); if(!b) return;
+    state.seat=+b.dataset.s; state.name=(state.roster.find(r=>r.seat===state.seat)||{}).name||'';
+    $('hello').textContent = `嗨，${state.name}！`;
+    renderTiles(); $('emotions').scrollIntoView({behavior:'smooth',block:'nearest'}); check(); };
+}
+function renderEmotions(){
+  if (!state.grade){ $('emotions').innerHTML='<div class="sub">先選好年級</div>'; return; }
+  const t = tierOf(state.grade);
+  $('emotions').innerHTML = Object.entries(COLORS).map(([ck,c])=>{
+    const list = EMOTIONS.filter(e=>e.color===ck && e.tier<=t);
+    return `<div class="zone z-${ck}"><h3>${c.emoji} ${c.zh}・${c.feel}區</h3><div class="ebtns">`+
+      list.map(e=>`<button class="ebtn" data-n="${e.name}"><span class="face">${e.em}</span>${e.name}</button>`).join('')+`</div></div>`;
+  }).join('');
+  $('emotions').onclick = e => { const b=e.target.closest('.ebtn'); if(!b) return;
+    state.emo = EMOTIONS.find(x=>x.name===b.dataset.n);
+    document.querySelectorAll('.ebtn').forEach(x=>{x.classList.toggle('sel',x===b); x.classList.toggle('dim',x!==b);}); check(); };
+}
+function check(){ $('send').disabled = !(state.cls && state.seat && state.emo); }
+function backToList(){
+  $('doneView').classList.add('hide'); $('formView').classList.remove('hide');
+  loadClass(); window.scrollTo(0,0);
 }
 async function submit(){
   $('send').disabled = true; $('err').textContent='';
   try{
-    const r = await api('checkin',{cls:state.cls, seat:state.seat, name:state.name, color:state.color, note:$('note').value.trim()});
+    const e = state.emo;
+    const r = await api('checkin',{cls:state.cls, seat:state.seat, name:state.name, color:e.color, emotion:e.em+' '+e.name, note:$('note').value.trim()});
     if (!r.ok) throw new Error(r.error||'fail');
-    store.set('sel_me',{cls:state.cls, seat:state.seat});
-    const c = COLORS[state.color];
-    $('dEmoji').textContent=c.emoji; $('dTitle').textContent=`你選了${c.zh}（${c.feel}）`; $('dMsg').textContent=c.msg;
+    $('note').value='';
+    const c = COLORS[e.color];
+    $('dEmoji').textContent=e.em; $('dTitle').textContent=`你選了「${e.name}」（${c.zh}・${c.feel}區）`; $('dMsg').textContent=c.msg;
     $('dTips').innerHTML = c.tips.map(t=>`<li>${t}</li>`).join('');
     $('dSig').innerHTML = SIGNALS.map((g,i)=>`<div class="sc"><img src="${g.img}" alt="${g.name}" loading="lazy"><b>${i+1}. ${g.name}</b>${g.use}</div>`).join('');
     $('formView').classList.add('hide'); $('doneView').classList.remove('hide'); window.scrollTo(0,0);
