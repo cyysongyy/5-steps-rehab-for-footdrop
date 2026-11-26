@@ -21,19 +21,21 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 .row{display:flex;gap:10px}.row>*{flex:1}
 /* 班級座號圖卡 */
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
-.tile{position:relative;border:3px solid var(--line);background:#fff;border-radius:16px;padding:10px 4px;text-align:center;cursor:pointer;font-family:inherit;color:var(--ink)}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;position:relative;border:3px solid var(--line);background:#fff;border-radius:16px;padding:10px 4px;text-align:center;cursor:pointer;font-family:inherit;color:var(--ink)}
 .tile .no{display:block;font-size:28px;font-weight:800;color:var(--pri);line-height:1.1}
 .tile .nm{display:block;font-size:16px;margin-top:2px}
 .tile.sel{border-color:var(--pri);background:#eef2ff;transform:scale(1.04)}
-.tile.done::after{content:"✓ 今天已簽到";position:absolute;left:0;right:0;bottom:-1px;font-size:11px;color:#047857;background:#d1fae5;border-radius:0 0 12px 12px}
+.tile .dn{position:absolute;left:0;right:0;bottom:-1px;font-size:11px;color:#047857;background:#d1fae5;border-radius:0 0 12px 12px;padding:1px 0}
 .tile.done{padding-bottom:20px}
-.tile .av{display:flex;width:48px;height:48px;margin:0 auto 2px;border-radius:50%;align-items:center;justify-content:center;font-size:29px;line-height:1;background:var(--abg,#FFF4C7)}
+.tile .av{display:flex;width:48px;height:48px;margin:6px auto 0;border-radius:50%;align-items:center;justify-content:center;font-size:29px;line-height:1;background:var(--abg,#FFF4C7)}
+.tile .av.ph{background:transparent;border:2px dashed #cbd5e1;color:#94a3b8;font-size:22px}
 .avc{display:inline-flex;width:34px;height:34px;border-radius:50%;align-items:center;justify-content:center;font-size:21px;vertical-align:middle;background:var(--abg,#FFF4C7)}
 .tile .no{font-size:20px}
 .apick{background:#fff8e5;border-radius:14px;padding:10px;margin-top:10px}
 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;margin-top:8px}
 .agrid button{font-size:30px;line-height:1;background:var(--abg,#fff);border:3px solid transparent;border-radius:50%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .agrid button.sel{border-color:var(--pri)}
+.agrid button.taken{opacity:.22;filter:grayscale(1);cursor:not-allowed}
 .hello{font-size:20px;font-weight:700;text-align:center;color:var(--pri);min-height:28px;margin-top:10px}
 /* 情緒卡片：柔和粉彩＋向量臉譜（faces.js） */
 .egrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -57,6 +59,7 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 textarea{resize:vertical}
 .go{width:100%;background:var(--pri);color:#fff;border:0;border-radius:16px;padding:16px;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit}
 .go:disabled{background:#c7c9d6}
+.phint{border-radius:14px;padding:9px 12px;margin:0 0 12px;font-size:15px;font-weight:700;text-align:center;background:#fff;color:var(--pri);box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .done-view{text-align:center}
 .big{font-size:64px}
 .tips{text-align:left;margin:10px 0 0;padding-left:20px;line-height:1.7}
@@ -94,17 +97,18 @@ textarea{resize:vertical}
       <div style="height:10px"></div>
       <div class="tiles" id="tiles"></div>
       <div class="hello" id="hello"></div>
-      <div class="apick hide" id="apick"><div class="sub" style="margin:0"><b>🎨 選一個你喜歡的圖案，代表自己！</b>（以後同學在名單上會看到它）</div><div class="agrid" id="agrid"></div></div>
+      <div class="apick hide" id="apick"><div class="sub" style="margin:0"><b>🎨 選一個你喜歡的圖案，代表自己！</b>（每個圖案只能一位同學使用，灰色的已被選走）</div><div class="agrid" id="agrid"></div></div>
     </div>
 
     <div class="card">
       <p class="step"><span>2</span><i id="stp2" style="font-style:normal">此刻，我的心情是哪一個？</i></p>
+      <div class="phint" id="phint"></div>
       <div id="emotions"></div>
     </div>
 
     <div class="card">
       <p class="step"><span>3</span><i id="stp3" style="font-style:normal">想多說一點嗎？（可以不寫）</i></p>
-      <textarea id="note" rows="2" maxlength="120" placeholder="例如：早上和朋友吵架了……"></textarea>
+      <textarea id="note" rows="2" maxlength="120" placeholder="例如：和朋友吵架了……"></textarea>
     </div>
 
     <button class="go" id="send" disabled>送出心情 ✔</button>
@@ -167,10 +171,32 @@ const GRADE_STYLE = {
   5:{page:'#F3EEFF',pri:'#7048C9',title:'✨ 心情 Check-in', s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'},
   6:{page:'#EDF1F6',pri:'#334155',title:'🧭 心情 Check-in', s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'}
 };
+/* Check-in／Check-out：不論時間，只看順序。學生當天「第一次送出＝Check-in」，「第二次送出＝Check-out」。
+   實際類型由後端依當天紀錄判定；這裡只是先預告，讓學生知道這次是哪一個。 */
+const KIND = {
+  ci:{icon:'👋',label:'Check-in', after:'等一下記得再來按 Check-out，告訴老師你的心情哦！'},
+  co:{icon:'🏁',label:'Check-out',after:'謝謝你，明天見！'}
+};
+// 這位學生今天已簽到幾次 → 下一次是哪一個
+function nextKind(){
+  if (!state.seat) return 'ci';
+  return (state.done.ci||[]).includes(state.seat) ? 'co' : 'ci';
+}
+function applyKind(){
+  const K = KIND[state.kind], st = GRADE_STYLE[state.grade] || GRADE_STYLE[3];
+  const bothDone = state.seat && (state.done.ci||[]).includes(state.seat) && (state.done.co||[]).includes(state.seat);
+  $('stp2').textContent = `${K.icon} ${K.label}：${st.s2}`;
+  $('send').textContent = `送出 ${K.label} ✔`;
+  $('phint').textContent = !state.seat ? '先點上面自己的號碼 👆'
+    : bothDone ? '今天已完成 Check-in 和 Check-out，再送出會更新 Check-out'
+    : state.kind==='ci' ? '👋 今天第一次：Check-in'
+    : '🏁 今天第二次：Check-out';
+}
 function applyStyle(g){
   const st = GRADE_STYLE[g] || GRADE_STYLE[3], root = document.documentElement.style;
   root.setProperty('--page', st.page); root.setProperty('--pri', st.pri);
-  $('ttl').textContent = st.title; $('stp1').textContent = st.s1; $('stp2').textContent = st.s2; $('stp3').textContent = st.s3;
+  $('ttl').textContent = st.title; $('stp1').textContent = st.s1; $('stp3').textContent = st.s3;
+  applyKind();
 }
 const tierOf = g => g<=2 ? 1 : g<=4 ? 2 : 3;
 
@@ -201,12 +227,14 @@ const store = { get(k,d){ try{ return JSON.parse(localStorage.getItem(k))??d }ca
 async function api(action, data){
   if (DEMO) {                       // 展示模式：存在本機
     if (action==='roster'){
-      const done = store.get('sel_demo_checkins',[]).filter(c=>c.cls===data.cls&&c.date===todayStr()).map(c=>c.seat);
+      const today = store.get('sel_demo_checkins',[]).filter(c=>c.cls===data.cls&&c.date===todayStr());
+      const done = {ci:today.filter(c=>c.kind==='ci').map(c=>c.seat), co:today.filter(c=>c.kind==='co').map(c=>c.seat)};
       return {ok:true, roster: store.get('sel_roster_'+data.cls, []).map(r=>({seat:r.seat,avatar:r.avatar||''})), done};
     }
-    if (action==='setAvatar'){ const k='sel_roster_'+data.cls, a=store.get(k,[]); const r=a.find(x=>x.seat===data.seat); if(r) r.avatar=data.avatar; store.set(k,a); return {ok:true}; }
+    if (action==='setAvatar'){ const k='sel_roster_'+data.cls, a=store.get(k,[]); if(a.some(x=>x.seat!==data.seat&&x.avatar===data.avatar)) return {ok:false,error:'taken'}; const r=a.find(x=>x.seat===data.seat); if(r) r.avatar=data.avatar; store.set(k,a); return {ok:true}; }
     if (action==='checkin'){ const a=store.get('sel_demo_checkins',[]); const d=new Date();
-      a.push({...data, date:todayStr(), time:d.toTimeString().slice(0,8)}); store.set('sel_demo_checkins',a); return {ok:true}; }
+      const seen=a.filter(c=>c.cls===data.cls&&c.seat===data.seat&&c.date===todayStr()).length;   // 當天第一次＝Check-in，之後＝Check-out
+      a.push({...data, kind:seen===0?'ci':'co', date:todayStr(), time:d.toTimeString().slice(0,8)}); store.set('sel_demo_checkins',a); return {ok:true, kind:seen===0?'ci':'co'}; }
   }
   if (action==='roster'){
     const r = await fetch(GAS_URL+'?action=roster&cls='+encodeURIComponent(data.cls)); return r.json();
@@ -215,7 +243,8 @@ async function api(action, data){
   return r.json();
 }
 
-let state = {cls:'', grade:0, seat:null, emo:null, roster:[], done:[]};
+let state = {cls:'', grade:0, seat:null, emo:null, roster:[], done:{ci:[],co:[]}, kind:'ci'};
+const doneOf = d => Array.isArray(d) ? {ci:d,co:[]} : (d||{ci:[],co:[]});   // 相容舊版後端
 
 function isSchoolDay(){
   const d=new Date();
@@ -246,20 +275,20 @@ function init(){
 async function loadClass(){
   const g=$('grade').value, k=$('klass').value;
   state.grade = +g||0; state.cls = (g&&k) ? g+k : '';
-  state.roster=[]; state.done=[]; state.seat=null; state.emo=null; $('hello').textContent='';
+  state.roster=[]; state.done={ci:[],co:[]}; state.seat=null; state.emo=null; state.kind='ci'; $('hello').textContent='';
   applyStyle(state.grade); renderEmotions();
   if (!state.cls){ $('tiles').innerHTML='<div class="sub">請先選年級</div>'; check(); return; }
   store.set('sel_class',state.cls);
   $('tiles').innerHTML='<div class="sub">載入中…</div>';
-  try{ const r = await api('roster',{cls:state.cls}); state.roster=(r.roster||[]).sort((a,b)=>a.seat-b.seat); state.done=r.done||[]; }catch(e){}
+  try{ const r = await api('roster',{cls:state.cls}); state.roster=(r.roster||[]).sort((a,b)=>a.seat-b.seat); state.done=doneOf(r.done); }catch(e){}
   renderTiles(); check();
 }
 function renderTiles(){
   if (!state.roster.length){ $('tiles').innerHTML='<div class="sub">這個班級還沒有名單，請老師先匯入。</div>'; return; }
   $('tiles').innerHTML = state.roster.map(r=>
-    `<button class="tile ${state.done.includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}">${r.avatar?`<span class="av" style="--abg:${abg(r.seat)}">${esc(r.avatar)}</span>`:''}<span class="no">${r.seat}</span><span class="nm">號</span></button>`).join('');
+    `<button class="tile ${(state.done.ci||[]).includes(r.seat)||(state.done.co||[]).includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}"><span class="no">${r.seat}</span><span class="nm">號</span>${r.avatar?`<span class="av" style="--abg:${abg(r.seat)}">${esc(r.avatar)}</span>`:'<span class="av ph">＋</span>'}${(state.done.co||[]).includes(r.seat)?'<span class="dn">✓✓ 今日完成</span>':(state.done.ci||[]).includes(r.seat)?'<span class="dn">✓ 已Check-in</span>':''}</button>`).join('');
   $('tiles').onclick = e => { const b=e.target.closest('.tile'); if(!b) return;
-    state.seat=+b.dataset.s;
+    state.seat=+b.dataset.s; state.kind=nextKind(); applyKind();
     showHello(); renderTiles(); $('emotions').scrollIntoView({behavior:'smooth',block:'nearest'}); check(); };
 }
 function showHello(){
@@ -272,10 +301,19 @@ function showHello(){
 }
 function renderAvatars(){
   const me = state.roster.find(r=>r.seat===state.seat)||{};
-  $('agrid').innerHTML = AVATARS.map((a,i)=>`<button data-a="${a}" style="--abg:${abg(i)}" class="${me.avatar===a?'sel':''}">${a}</button>`).join('');
-  $('agrid').onclick = async e => { const b=e.target.closest('button'); if(!b) return;
-    const av=b.dataset.a, seat=state.seat;
-    try{ const r = await api('setAvatar',{cls:state.cls, seat, avatar:av}); if(!r.ok) throw 0;
+  // 同班同學已選走的圖案：變灰、不能再選（每個圖案只能一人使用）
+  const taken = new Set(state.roster.filter(r=>r.seat!==state.seat && r.avatar).map(r=>r.avatar));
+  $('agrid').innerHTML = AVATARS.map((a,i)=> taken.has(a)
+    ? `<button disabled class="taken" title="已被同學選走" style="--abg:${abg(i)}">${a}</button>`
+    : `<button data-a="${a}" style="--abg:${abg(i)}" class="${me.avatar===a?'sel':''}">${a}</button>`).join('');
+  $('agrid').onclick = async e => { const b=e.target.closest('button'); if(!b||b.disabled) return;
+    const av=b.dataset.a, seat=state.seat; $('err').textContent='';
+    try{ const r = await api('setAvatar',{cls:state.cls, seat, avatar:av});
+      if (r.error==='taken'){   // 剛好被同學搶先選走：更新名單，請他換一個
+        $('err').textContent='這個圖案剛剛被同學選走了，請換一個。';
+        const fresh = await api('roster',{cls:state.cls}); state.roster=(fresh.roster||[]).sort((a,b)=>a.seat-b.seat); state.done=doneOf(fresh.done);
+        renderTiles(); renderAvatars(); return; }
+      if(!r.ok) throw 0;
       me.avatar=av; $('apick').classList.add('hide'); showHello(); renderTiles();
     }catch(err){ $('err').textContent='圖案儲存失敗，請再試一次。'; } };
 }
@@ -303,9 +341,11 @@ async function submit(){
     const r = await api('checkin',{cls:state.cls, seat:state.seat, color:e.color, emotion:e.em+' '+e.name, note:$('note').value.trim()});
     if (!r.ok) throw new Error(r.error||'fail');
     $('note').value='';
+    const per = r.kind || state.kind;   // 以後端判定為準（當天第一次＝Check-in，第二次起＝Check-out）
+    (state.done[per] = state.done[per]||[]).includes(state.seat) || state.done[per].push(state.seat);
     const c = COLORS[e.color];
-    $('dEmoji').innerHTML=SELFaces.svg(e.name,110); $('dTitle').textContent=`你選了「${e.name}」（${c.zh}・${c.feel}區）`; $('dMsg').textContent=c.msg;
-    $('dTips').innerHTML = c.tips.map(t=>`<li>${t}</li>`).join('');
+    $('dEmoji').innerHTML=SELFaces.svg(e.name,110); $('dTitle').textContent=`${KIND[per].icon} ${KIND[per].label}：「${e.name}」（${c.zh}・${c.feel}區）`; $('dMsg').textContent=c.msg;
+    $('dTips').innerHTML = c.tips.map(t=>`<li>${t}</li>`).join('') + `<li style="list-style:none;margin-top:6px;color:var(--pri);font-weight:700">${KIND[per].after}</li>`;
     $('dSig').innerHTML = SIGNALS.map((g,i)=>`<div class="sc"><img src="${g.img}" alt="${g.name}" loading="lazy"><b>${i+1}. ${g.name}</b>${g.use}</div>`).join('');
     $('formView').classList.add('hide'); $('doneView').classList.remove('hide'); window.scrollTo(0,0);
   }catch(e){ $('err').textContent='送出失敗，請檢查網路後再試一次。'; check(); }
