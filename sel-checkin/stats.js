@@ -53,14 +53,14 @@
   }
   function classes(d){
     if(!d.byClass||!d.byClass.length)return '';
-    return `<div class="st-card"><h3>各班比較</h3><div style="overflow-x:auto"><table class="st-t"><tr><th>班級</th><th>☀️ 早上簽到率</th><th>🌇 放學簽到率</th><th>🔴</th><th>🔵</th><th>🟡</th><th>🟢</th><th>負向占比</th><th>好轉↑</th><th>轉差↓</th></tr>`+
-      d.byClass.map(c=>{const ch=c.change||{};return `<tr><td>${clsLabel(c.cls)}</td><td>${pct(c.amRate)}</td><td>${pct(c.pmRate)}</td><td>${c.red}</td><td>${c.blue}</td><td>${c.yellow}</td><td>${c.green}</td><td>${pct(c.neg)} ${c.prevNeg==null?'':(c.neg>c.prevNeg?'<span class="st-up">▲</span>':c.neg<c.prevNeg?'<span class="st-down">▼</span>':'＝')}</td><td>${ch.improved||0}</td><td>${ch.worsened?`<b class="st-up">${ch.worsened}</b>`:0}</td></tr>`}).join('')+
-      `</table></div><div class="st-note">簽到率＝該時段簽到人次 ÷（有簽到的天數 × 班級人數）；好轉／轉差＝同一天早上與放學都有簽到者的人次；▲▼ 與前一個同長度期間比較。</div></div>`;
+    return `<div class="st-card"><h3>各班比較</h3><div style="overflow-x:auto"><table class="st-t"><tr><th>班級</th><th>👋 Check-in 簽到率</th><th>🏁 Check-out 簽到率</th><th>🔴</th><th>🔵</th><th>🟡</th><th>🟢</th><th>負向占比</th><th>好轉↑</th><th>轉差↓</th></tr>`+
+      d.byClass.map(c=>{const ch=c.change||{};return `<tr><td>${clsLabel(c.cls)}</td><td>${pct(c.ciRate)}</td><td>${pct(c.coRate)}</td><td>${c.red}</td><td>${c.blue}</td><td>${c.yellow}</td><td>${c.green}</td><td>${pct(c.neg)} ${c.prevNeg==null?'':(c.neg>c.prevNeg?'<span class="st-up">▲</span>':c.neg<c.prevNeg?'<span class="st-down">▼</span>':'＝')}</td><td>${ch.improved||0}</td><td>${ch.worsened?`<b class="st-up">${ch.worsened}</b>`:0}</td></tr>`}).join('')+
+      `</table></div><div class="st-note">簽到率＝該類型（Check-in／Check-out）簽到人次 ÷（有簽到的天數 × 班級人數）；好轉／轉差＝同一天 Check-in 與 Check-out 都有簽到者的人次；▲▼ 與前一個同長度期間比較。</div></div>`;
   }
-  // 當天心情變化：早上 → 放學
+  // 當天心情變化：Check-in → Check-out
   const KIND={improved:{zh:'好轉',c:'#2fa86b',icon:'↑',hint:'非綠 → 綠'},same:{zh:'持平',c:'#94a3b8',icon:'＝',hint:'顏色不變'},shifted:{zh:'轉換',c:'#f59e0b',icon:'⇄',hint:'非綠 → 另一種非綠'},worsened:{zh:'轉差',c:'#e5484d',icon:'↓',hint:'綠 → 非綠'}};
   const KORDER=['improved','same','shifted','worsened'];
-  function periodBar(label,t){
+  function kindBar(label,t){
     if(!t||!t.n)return `<div class="st-bar"><span class="nm">${label}</span><span class="st-note">沒有簽到</span></div>`;
     return `<div class="st-bar"><span class="nm">${label}（${t.n}）</span><span class="tr" style="display:flex">${['red','blue','yellow','green'].map(k=>t[k]?`<i style="width:${t[k]/t.n*100}%;background:${COL[k]}" title="${ZH[k]} ${t[k]}"></i>`:'').join('')}</span><span>${pct(t.neg)}</span></div>`;
   }
@@ -72,15 +72,15 @@
     return `<div class="st-chart" style="height:120px">${cols}</div><div class="st-lab">${cs.map((b,i)=>`<span>${i%step===0?b.key.slice(5):''}</span>`).join('')}</div>`;
   }
   function changeCard(d){
-    const c=d.change||{both:0}, P=d.periods||{};
-    let h=`<div class="st-card"><h3>🔄 當天心情變化（早上 → 放學）</h3>`;
-    if(!c.both){h+=`<div class="st-note">這段期間還沒有同學「同一天早上和放學都簽到」，放學簽到後就會出現變化統計。</div>`;}
+    const c=d.change||{both:0}, P=d.kinds||{};
+    let h=`<div class="st-card"><h3>🔄 當天心情變化（Check-in → Check-out）</h3>`;
+    if(!c.both){h+=`<div class="st-note">這段期間還沒有同學「同一天 Check-in 和 Check-out 都簽到」，Check-out 後就會出現變化統計。</div>`;}
     else{
       h+=`<div class="st-sum" style="margin-bottom:8px">`+KORDER.map(k=>`<div style="border-top:4px solid ${KIND[k].c}"><b style="color:${KIND[k].c}">${c[k]} <small style="font-size:13px">（${pct(c[k]/c.both)}）</small></b><span>${KIND[k].icon} ${KIND[k].zh}：${KIND[k].hint}</span></div>`).join('')+`</div>`+
-        changeChart(d)+`<div class="st-leg">${KORDER.map(k=>`<span><i style="background:${KIND[k].c}"></i>${KIND[k].zh}</span>`).join('')}<span class="st-note">柱高＝早上、放學都簽到的人次（${d.bucket==='week'?'每週':'每日'}）</span></div>`;
+        changeChart(d)+`<div class="st-leg">${KORDER.map(k=>`<span><i style="background:${KIND[k].c}"></i>${KIND[k].zh}</span>`).join('')}<span class="st-note">柱高＝Check-in、Check-out 都簽到的人次（${d.bucket==='week'?'每週':'每日'}）</span></div>`;
     }
-    h+=`<div style="margin-top:12px"><b style="font-size:14px">早上與放學的情緒分布</b>${periodBar('☀️ 早上',P.am)}${periodBar('🌇 放學',P.pm)}</div>`+
-      `<div class="st-note">進步＝放學比早上更平和；轉差的同學建議當天關心。若放學負向占比明顯高於早上，可回頭看當天課程與下課互動。</div></div>`;
+    h+=`<div style="margin-top:12px"><b style="font-size:14px">Check-in 與 Check-out 的情緒分布</b>${kindBar('👋 Check-in',P.ci)}${kindBar('🏁 Check-out',P.co)}</div>`+
+      `<div class="st-note">進步＝Check-out 比 Check-in 更平和；轉差的同學建議當天關心。若 Check-out 的負向占比明顯高於 Check-in，可回頭看當天的課程與互動。</div></div>`;
     return h;
   }
   function watch(d,showCls){

@@ -108,7 +108,7 @@ textarea{resize:vertical}
 
     <div class="card">
       <p class="step"><span>3</span><i id="stp3" style="font-style:normal">想多說一點嗎？（可以不寫）</i></p>
-      <textarea id="note" rows="2" maxlength="120" placeholder="例如：早上和朋友吵架了……"></textarea>
+      <textarea id="note" rows="2" maxlength="120" placeholder="例如：和朋友吵架了……"></textarea>
     </div>
 
     <button class="go" id="send" disabled>送出心情 ✔</button>
@@ -171,32 +171,32 @@ const GRADE_STYLE = {
   5:{page:'#F3EEFF',pri:'#7048C9',title:'✨ 心情 Check-in', s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'},
   6:{page:'#EDF1F6',pri:'#334155',title:'🧭 心情 Check-in', s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'}
 };
-/* 早上心情／放學心情：不看時間，當天「第一次送出＝Check-in（早上心情）」，「第二次送出＝Check-out（放學心情）」。
-   實際時段由後端依當天已有的紀錄判定；這裡只是先預告，讓學生知道這次是哪一個。 */
-const PERIOD = {
-  am:{icon:'☀️',label:'早上心情',tag:'Check-in', after:'放學前，再來按一次 Check-out 告訴老師你的心情哦！'},
-  pm:{icon:'🌇',label:'放學心情',tag:'Check-out',after:'謝謝你，明天見！'}
+/* Check-in／Check-out：不論時間，只看順序。學生當天「第一次送出＝Check-in」，「第二次送出＝Check-out」。
+   實際類型由後端依當天紀錄判定；這裡只是先預告，讓學生知道這次是哪一個。 */
+const KIND = {
+  ci:{icon:'👋',label:'Check-in', after:'等一下記得再來按 Check-out，告訴老師你的心情哦！'},
+  co:{icon:'🏁',label:'Check-out',after:'謝謝你，明天見！'}
 };
-// 這位學生今天已簽到幾次 → 下一次是哪個時段
-function nextPeriod(){
-  if (!state.seat) return 'am';
-  return (state.done.am||[]).includes(state.seat) ? 'pm' : 'am';
+// 這位學生今天已簽到幾次 → 下一次是哪一個
+function nextKind(){
+  if (!state.seat) return 'ci';
+  return (state.done.ci||[]).includes(state.seat) ? 'co' : 'ci';
 }
-function applyPeriod(){
-  const P = PERIOD[state.period], st = GRADE_STYLE[state.grade] || GRADE_STYLE[3];
-  const bothDone = state.seat && (state.done.am||[]).includes(state.seat) && (state.done.pm||[]).includes(state.seat);
-  $('stp2').textContent = `${P.icon} ${P.label}：${st.s2}`;
-  $('send').textContent = `送出${P.label}（${P.tag}） ✔`;
+function applyKind(){
+  const K = KIND[state.kind], st = GRADE_STYLE[state.grade] || GRADE_STYLE[3];
+  const bothDone = state.seat && (state.done.ci||[]).includes(state.seat) && (state.done.co||[]).includes(state.seat);
+  $('stp2').textContent = `${K.icon} ${K.label}：${st.s2}`;
+  $('send').textContent = `送出 ${K.label} ✔`;
   $('phint').textContent = !state.seat ? '先點上面自己的號碼 👆'
-    : bothDone ? '今天已完成 Check-in 和 Check-out，再送出會更新放學心情'
-    : state.period==='am' ? '☀️ 今天第一次：早上心情 Check-in'
-    : '🌇 今天第二次：放學心情 Check-out';
+    : bothDone ? '今天已完成 Check-in 和 Check-out，再送出會更新 Check-out'
+    : state.kind==='ci' ? '👋 今天第一次：Check-in'
+    : '🏁 今天第二次：Check-out';
 }
 function applyStyle(g){
   const st = GRADE_STYLE[g] || GRADE_STYLE[3], root = document.documentElement.style;
   root.setProperty('--page', st.page); root.setProperty('--pri', st.pri);
   $('ttl').textContent = st.title; $('stp1').textContent = st.s1; $('stp3').textContent = st.s3;
-  applyPeriod();
+  applyKind();
 }
 const tierOf = g => g<=2 ? 1 : g<=4 ? 2 : 3;
 
@@ -228,13 +228,13 @@ async function api(action, data){
   if (DEMO) {                       // 展示模式：存在本機
     if (action==='roster'){
       const today = store.get('sel_demo_checkins',[]).filter(c=>c.cls===data.cls&&c.date===todayStr());
-      const done = {am:today.filter(c=>c.period==='am').map(c=>c.seat), pm:today.filter(c=>c.period==='pm').map(c=>c.seat)};
+      const done = {ci:today.filter(c=>c.kind==='ci').map(c=>c.seat), co:today.filter(c=>c.kind==='co').map(c=>c.seat)};
       return {ok:true, roster: store.get('sel_roster_'+data.cls, []).map(r=>({seat:r.seat,avatar:r.avatar||''})), done};
     }
     if (action==='setAvatar'){ const k='sel_roster_'+data.cls, a=store.get(k,[]); if(a.some(x=>x.seat!==data.seat&&x.avatar===data.avatar)) return {ok:false,error:'taken'}; const r=a.find(x=>x.seat===data.seat); if(r) r.avatar=data.avatar; store.set(k,a); return {ok:true}; }
     if (action==='checkin'){ const a=store.get('sel_demo_checkins',[]); const d=new Date();
-      const seen=a.filter(c=>c.cls===data.cls&&c.seat===data.seat&&c.date===todayStr()).length;   // 當天第一次＝am，之後＝pm
-      a.push({...data, period:seen===0?'am':'pm', date:todayStr(), time:d.toTimeString().slice(0,8)}); store.set('sel_demo_checkins',a); return {ok:true, period:seen===0?'am':'pm'}; }
+      const seen=a.filter(c=>c.cls===data.cls&&c.seat===data.seat&&c.date===todayStr()).length;   // 當天第一次＝Check-in，之後＝Check-out
+      a.push({...data, kind:seen===0?'ci':'co', date:todayStr(), time:d.toTimeString().slice(0,8)}); store.set('sel_demo_checkins',a); return {ok:true, kind:seen===0?'ci':'co'}; }
   }
   if (action==='roster'){
     const r = await fetch(GAS_URL+'?action=roster&cls='+encodeURIComponent(data.cls)); return r.json();
@@ -243,8 +243,8 @@ async function api(action, data){
   return r.json();
 }
 
-let state = {cls:'', grade:0, seat:null, emo:null, roster:[], done:{am:[],pm:[]}, period:'am'};
-const doneOf = d => Array.isArray(d) ? {am:d,pm:[]} : (d||{am:[],pm:[]});   // 相容舊版後端
+let state = {cls:'', grade:0, seat:null, emo:null, roster:[], done:{ci:[],co:[]}, kind:'ci'};
+const doneOf = d => Array.isArray(d) ? {ci:d,co:[]} : (d||{ci:[],co:[]});   // 相容舊版後端
 
 function isSchoolDay(){
   const d=new Date();
@@ -275,7 +275,7 @@ function init(){
 async function loadClass(){
   const g=$('grade').value, k=$('klass').value;
   state.grade = +g||0; state.cls = (g&&k) ? g+k : '';
-  state.roster=[]; state.done={am:[],pm:[]}; state.seat=null; state.emo=null; state.period='am'; $('hello').textContent='';
+  state.roster=[]; state.done={ci:[],co:[]}; state.seat=null; state.emo=null; state.kind='ci'; $('hello').textContent='';
   applyStyle(state.grade); renderEmotions();
   if (!state.cls){ $('tiles').innerHTML='<div class="sub">請先選年級</div>'; check(); return; }
   store.set('sel_class',state.cls);
@@ -286,9 +286,9 @@ async function loadClass(){
 function renderTiles(){
   if (!state.roster.length){ $('tiles').innerHTML='<div class="sub">這個班級還沒有名單，請老師先匯入。</div>'; return; }
   $('tiles').innerHTML = state.roster.map(r=>
-    `<button class="tile ${(state.done.am||[]).includes(r.seat)||(state.done.pm||[]).includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}"><span class="no">${r.seat}</span><span class="nm">號</span>${r.avatar?`<span class="av" style="--abg:${abg(r.seat)}">${esc(r.avatar)}</span>`:'<span class="av ph">＋</span>'}${(state.done.pm||[]).includes(r.seat)?'<span class="dn">✓✓ 今日完成</span>':(state.done.am||[]).includes(r.seat)?'<span class="dn">✓ 已Check-in</span>':''}</button>`).join('');
+    `<button class="tile ${(state.done.ci||[]).includes(r.seat)||(state.done.co||[]).includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}"><span class="no">${r.seat}</span><span class="nm">號</span>${r.avatar?`<span class="av" style="--abg:${abg(r.seat)}">${esc(r.avatar)}</span>`:'<span class="av ph">＋</span>'}${(state.done.co||[]).includes(r.seat)?'<span class="dn">✓✓ 今日完成</span>':(state.done.ci||[]).includes(r.seat)?'<span class="dn">✓ 已Check-in</span>':''}</button>`).join('');
   $('tiles').onclick = e => { const b=e.target.closest('.tile'); if(!b) return;
-    state.seat=+b.dataset.s; state.period=nextPeriod(); applyPeriod();
+    state.seat=+b.dataset.s; state.kind=nextKind(); applyKind();
     showHello(); renderTiles(); $('emotions').scrollIntoView({behavior:'smooth',block:'nearest'}); check(); };
 }
 function showHello(){
@@ -338,14 +338,14 @@ async function submit(){
   $('send').disabled = true; $('err').textContent='';
   try{
     const e = state.emo;
-    const r = await api('checkin',{cls:state.cls, seat:state.seat, period:state.period, color:e.color, emotion:e.em+' '+e.name, note:$('note').value.trim()});
+    const r = await api('checkin',{cls:state.cls, seat:state.seat, color:e.color, emotion:e.em+' '+e.name, note:$('note').value.trim()});
     if (!r.ok) throw new Error(r.error||'fail');
     $('note').value='';
-    const per = r.period || state.period;   // 以後端判定為準（當天第一次＝早上，第二次起＝放學）
+    const per = r.kind || state.kind;   // 以後端判定為準（當天第一次＝Check-in，第二次起＝Check-out）
     (state.done[per] = state.done[per]||[]).includes(state.seat) || state.done[per].push(state.seat);
     const c = COLORS[e.color];
-    $('dEmoji').innerHTML=SELFaces.svg(e.name,110); $('dTitle').textContent=`${PERIOD[per].icon} ${PERIOD[per].label}（${PERIOD[per].tag}）：「${e.name}」（${c.zh}・${c.feel}區）`; $('dMsg').textContent=c.msg;
-    $('dTips').innerHTML = c.tips.map(t=>`<li>${t}</li>`).join('') + `<li style="list-style:none;margin-top:6px;color:var(--pri);font-weight:700">${PERIOD[per].after}</li>`;
+    $('dEmoji').innerHTML=SELFaces.svg(e.name,110); $('dTitle').textContent=`${KIND[per].icon} ${KIND[per].label}：「${e.name}」（${c.zh}・${c.feel}區）`; $('dMsg').textContent=c.msg;
+    $('dTips').innerHTML = c.tips.map(t=>`<li>${t}</li>`).join('') + `<li style="list-style:none;margin-top:6px;color:var(--pri);font-weight:700">${KIND[per].after}</li>`;
     $('dSig').innerHTML = SIGNALS.map((g,i)=>`<div class="sc"><img src="${g.img}" alt="${g.name}" loading="lazy"><b>${i+1}. ${g.name}</b>${g.use}</div>`).join('');
     $('formView').classList.add('hide'); $('doneView').classList.remove('hide'); window.scrollTo(0,0);
   }catch(e){ $('err').textContent='送出失敗，請檢查網路後再試一次。'; check(); }
