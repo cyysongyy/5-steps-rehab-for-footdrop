@@ -76,6 +76,7 @@ th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertic
 </div>
 
 <script src="faces.js"></script>
+<script src="animals.js"></script>
 <script src="stats.js"></script>
 <script src="config.js"></script>
 <script>
@@ -164,7 +165,7 @@ function render(){
   $('classes').onclick=e=>{const c=e.target.closest('.cc');if(c){openCls=openCls===c.dataset.c?'':c.dataset.c;render()}};
   const oc=data.classes.find(c=>c.cls===openCls);
   $('detail').innerHTML=oc?`<div class="detail"><b>${clsLabel(oc.cls)}（${esc($('date').value)}）</b><table><tr><th>座號</th><th>姓名</th><th>👋 Check-in</th><th>🏁 Check-out</th><th>變化</th><th>留言</th><th>處遇</th></tr>`+
-    oc.students.map(s=>`<tr><td>${esc(s.avatar||'')} ${s.seat}</td><td>${esc(s.name)}</td><td>${cell(s.ci)}</td><td>${cell(s.co)}</td><td>${s.change?`<span class="chg ${s.change}">${CHG_ZH[s.change]}${CHG_ICON[s.change]}</span>`:''}</td><td>${esc(s.note||'')}</td><td>${s.fu?esc(s.fu.status)+(s.fu.note?'：'+esc(s.fu.note):''):''}</td></tr>`).join('')+'</table></div>':'';
+    oc.students.map(s=>`<tr><td>${SELAnimals.html(s.avatar,22)} ${s.seat}</td><td>${esc(s.name)}</td><td>${cell(s.ci)}</td><td>${cell(s.co)}</td><td>${s.change?`<span class="chg ${s.change}">${CHG_ZH[s.change]}${CHG_ICON[s.change]}</span>`:''}</td><td>${esc(s.note||'')}</td><td>${s.fu?esc(s.fu.status)+(s.fu.note?'：'+esc(s.fu.note):''):''}</td></tr>`).join('')+'</table></div>':'';
   $('meta').textContent=`${$('date').value} · 更新 ${new Date().toTimeString().slice(0,5)} · 每分鐘自動更新`;
 }
 function exportCsv(){

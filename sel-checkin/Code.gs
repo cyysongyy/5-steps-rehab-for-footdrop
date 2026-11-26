@@ -388,19 +388,29 @@ function doPost(e) {
       if (!av || /[A-Za-z0-9<>&"'\s]/.test(av)) return out_({ ok: false, error: 'bad avatar' });
       var rsh = sheet_('Roster'), rv = rsh.getDataRange().getValues(), col = rv[0].indexOf('圖案');
       if (col < 0) { col = rv[0].length; rsh.getRange(1, col + 1).setValue('圖案'); }
-      var target = -1;
+      var target = -1, current = '';
       for (var j = 1; j < rv.length; j++) {
         if (String(rv[j][0]) !== String(b.cls)) continue;
-        if (Number(rv[j][1]) === Number(b.seat)) { target = j; }
+        if (Number(rv[j][1]) === Number(b.seat)) { target = j; current = String(rv[j][col] || ''); }
         else if (String(rv[j][col] || '') === av) return out_({ ok: false, error: 'taken' });   // 同班同學已選走，每個圖案只能一人使用
       }
       if (target < 0) return out_({ ok: false, error: 'not in roster' });
+      // 每個座號只能選一次，選定就固定（重送相同圖案視為成功，避免網路重試誤判）；要重選須由老師／校長重設
+      if (current) return out_(current === av ? { ok: true } : { ok: false, error: 'locked' });
       rsh.getRange(target + 1, col + 1).setValue(av);
       return out_({ ok: true });
     }
     var acc = access_(b.pass);
     if (!acc) return out_({ ok: false, error: 'auth' });
     if (!can_(acc, b.cls)) return out_({ ok: false, error: 'forbidden' });
+    if (a === 'clearAvatar') {   // 老師（自己班）或校長：重設某位學生的圖案，讓他可以重新選一次
+      var csh2 = sheet_('Roster'), cv = csh2.getDataRange().getValues(), ccol = cv[0].indexOf('圖案');
+      if (ccol < 0) return out_({ ok: true });
+      for (var q = 1; q < cv.length; q++) {
+        if (String(cv[q][0]) === String(b.cls) && Number(cv[q][1]) === Number(b.seat)) { csh2.getRange(q + 1, ccol + 1).setValue(''); return out_({ ok: true }); }
+      }
+      return out_({ ok: false, error: 'not in roster' });
+    }
     if (a === 'saveRoster') {
       var sh = sheet_('Roster');
       var all = sh.getDataRange().getValues();
