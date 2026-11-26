@@ -78,7 +78,7 @@ body.board .wrap{max-width:1600px;padding:16px 28px 28px}
 body.board h1{font-size:36px;margin:2px 0 0}
 body.board .sub{font-size:18px;margin-bottom:10px}
 body.board .cols{display:grid;grid-template-columns:minmax(320px,29%) 1fr;gap:20px;align-items:start}
-body.board .colL{position:sticky;top:10px}
+body.board .colL{position:sticky;top:10px;z-index:30}   /* 左欄自成一層，選動物視窗才不會被右邊的心情卡片蓋住 */
 body.board .colL .card,body.board .colR .card{margin-bottom:14px}
 body.board .tiles{grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:12px;max-height:calc(100vh - 250px);overflow:auto;padding:4px}
 body.board .tile{padding:14px 4px 10px}
@@ -100,6 +100,7 @@ body.board .hello{font-size:26px}
 body.board .apick{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(820px,92vw);max-height:84vh;overflow:auto;z-index:40;margin:0;box-shadow:0 0 0 100vmax rgba(0,0,0,.45),0 24px 70px rgba(0,0,0,.4);border:3px solid #fff}
 body.board .apx{display:block;position:absolute;top:8px;right:12px;border:0;background:#fff;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer}
 body.board .agrid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:10px}
+body.board .apick .sub{padding-right:52px}   /* 讓說明文字不被右上角的關閉鈕壓到 */
 /* 臉的大小隨螢幕高度縮放，讓卡片、座號、送出鈕都能在同一個畫面內 */
 body.board .egrid .ecard svg{width:var(--fs,70px);height:var(--fs,70px)}
 body.board .egrid.big{--fs:clamp(56px,13vh,120px)}
