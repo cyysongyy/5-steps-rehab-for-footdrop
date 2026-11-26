@@ -164,12 +164,12 @@ const EMOTIONS = [
 ];
 /* 各年級的畫面風格：底色、主色、標題、步驟用語、卡片版型（big 大卡片／two 兩欄含描述／compact 三欄精簡） */
 const GRADE_STYLE = {
-  1:{page:'#FFF6E3',pri:'#E8800F',title:'🌱 今天的心情',    s1:'點一下，找到你的號碼',   s2:'你現在的心情是哪一個？',   s3:'想說什麼嗎？（可以不寫）',   layout:'big'},
-  2:{page:'#EAF7EE',pri:'#2A9D62',title:'🌼 我的心情小天地',s1:'點一下，找到你的號碼',   s2:'你現在的心情是哪一個？',   s3:'想告訴老師什麼嗎？（可以不寫）', layout:'big'},
-  3:{page:'#F7F7FB',pri:'#4F46E5',title:'🌈 我的心情簽到',  s1:'找到我的座號，點一下',   s2:'此刻，我的心情是哪一個？', s3:'想多說一點嗎？（可以不寫）', layout:'two'},
-  4:{page:'#EAF3FF',pri:'#2F6FDB',title:'🌊 我的心情簽到',  s1:'找到我的座號，點一下',   s2:'此刻，我的心情是哪一個？', s3:'想多說一點嗎？（可以不寫）', layout:'two'},
-  5:{page:'#F3EEFF',pri:'#7048C9',title:'✨ 心情 Check-in', s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'},
-  6:{page:'#EDF1F6',pri:'#334155',title:'🧭 心情 Check-in', s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'}
+  1:{page:'#FFF6E3',pri:'#E8800F',title:'🌱 {c}今天的心情',   s1:'點一下，找到你的號碼',   s2:'你現在的心情是哪一個？',   s3:'想說什麼嗎？（可以不寫）',   layout:'big'},
+  2:{page:'#EAF7EE',pri:'#2A9D62',title:'🌼 {c}心情小天地',s1:'點一下，找到你的號碼',   s2:'你現在的心情是哪一個？',   s3:'想告訴老師什麼嗎？（可以不寫）', layout:'big'},
+  3:{page:'#F7F7FB',pri:'#4F46E5',title:'🌈 {c}心情簽到',    s1:'找到我的座號，點一下',   s2:'此刻，我的心情是哪一個？', s3:'想多說一點嗎？（可以不寫）', layout:'two'},
+  4:{page:'#EAF3FF',pri:'#2F6FDB',title:'🌊 {c}心情簽到',    s1:'找到我的座號，點一下',   s2:'此刻，我的心情是哪一個？', s3:'想多說一點嗎？（可以不寫）', layout:'two'},
+  5:{page:'#F3EEFF',pri:'#7048C9',title:'✨ {c}心情 Check-in',s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'},
+  6:{page:'#EDF1F6',pri:'#334155',title:'🧭 {c}心情 Check-in',s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'}
 };
 /* Check-in／Check-out：不論時間，只看順序。學生當天「第一次送出＝Check-in」，「第二次送出＝Check-out」。
    實際類型由後端依當天紀錄判定；這裡只是先預告，讓學生知道這次是哪一個。 */
@@ -195,7 +195,11 @@ function applyKind(){
 function applyStyle(g){
   const st = GRADE_STYLE[g] || GRADE_STYLE[3], root = document.documentElement.style;
   root.setProperty('--page', st.page); root.setProperty('--pri', st.pri);
-  $('ttl').textContent = st.title; $('stp1').textContent = st.s1; $('stp3').textContent = st.s3;
+  // 標題帶入班級：{c} → 例如「六甲」（年級中文 + 班名）
+  const cname = state.cls ? (GRADE_ZH[state.grade]||'') + state.cls.slice(String(state.grade).length) : '';
+  $('ttl').textContent = st.title.replace('{c}', cname);
+  document.title = cname ? `${cname}心情 Check-in` : '我的心情簽到';
+   $('stp1').textContent = st.s1; $('stp3').textContent = st.s3;
   applyKind();
 }
 const tierOf = g => g<=2 ? 1 : g<=4 ? 2 : 3;
