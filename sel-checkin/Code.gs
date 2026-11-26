@@ -71,7 +71,7 @@ function dateStr_(v) {
 function timeStr_(v) {
   return v instanceof Date ? Utilities.formatDate(v, 'Asia/Taipei', 'yyyy-MM-dd HH:mm:ss') : String(v == null ? '' : v);
 }
-// 時段：am＝早上心情、pm＝放學心情。舊資料沒有「時段」欄時，依簽到時間推算（中午 12 點前為早上）
+// 時段：am＝早上心情（當天第一次 Check-in）、pm＝放學心情（當天第二次 Check-out）。僅舊資料沒有「時段」欄時，才依簽到時間推算（中午 12 點前為早上）
 function periodOf_(r) {
   var p = String(r['時段'] || '');
   if (p === 'am' || p === 'pm') return p;
@@ -359,16 +359,20 @@ function doPost(e) {
       var cls = str_(b.cls, 10), seat = Number(b.seat);
       var me = rosterOf_(cls).filter(function (r) { return r.seat === seat; })[0];
       var name = me ? me.name : str_(b.name, 20);
-      // 時段：前端傳 am（早上）或 pm（放學）；沒傳就依台灣時間，中午 12 點前為早上
-      var period = (b.period === 'am' || b.period === 'pm') ? b.period
-        : (Number(Utilities.formatDate(new Date(), 'Asia/Taipei', 'H')) < 12 ? 'am' : 'pm');
+      // 時段不看時間：學生當天第一次送出＝Check-in（am，早上心情），第二次起＝Check-out（pm，放學心情；
+      // 第三次以後視為更正放學心情，統計取最新一筆）。以後端紀錄為準，不採用前端傳來的時段。
+      var seenToday = 0, dd = today_();
+      rows_('Checkins').forEach(function (r) {
+        if (String(r['班級']) === cls && Number(r['座號']) === seat && dateStr_(r['日期']) === dd) seenToday++;
+      });
+      var period = seenToday === 0 ? 'am' : 'pm';
       var csh = sheet_('Checkins'), hdr = csh.getDataRange().getValues()[0];
       try { if (hdr.indexOf('時段') < 0) csh.getRange(1, hdr.length + 1).setValue('時段'); } catch (hdrErr) {}   // 舊試算表自動補上「時段」標題欄（失敗也不影響簽到）
       csh.appendRow([Utilities.getUuid(), now_(), today_(), cls, seat, name,
         b.color, str_(b.emotion, 30), str_(b.note, 200), period]);
       // 即時通知導師（寄信失敗不影響簽到）
       try { alertTeachers_(cls, seat, name, b.color, str_(b.emotion, 30), !!str_(b.note, 200), period); } catch (mailErr) {}
-      return out_({ ok: true });
+      return out_({ ok: true, period: period });
     }
     if (a === 'setAvatar') {   // 學生自選圖案（自我圖式）
       var av = str_(b.avatar, 8);
