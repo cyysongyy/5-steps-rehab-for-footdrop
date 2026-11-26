@@ -27,19 +27,19 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 .tile.sel{border-color:var(--pri);background:#eef2ff;transform:scale(1.04)}
 .tile .dn{position:absolute;left:0;right:0;bottom:-1px;font-size:11px;color:#047857;background:#d1fae5;border-radius:0 0 12px 12px;padding:1px 0}
 .tile.done{padding-bottom:20px}
-.tile .av{display:flex;width:48px;height:48px;margin:6px auto 0;border-radius:50%;align-items:center;justify-content:center;font-size:29px;line-height:1;background:var(--abg,#FFF4C7)}
+.tile .av{display:flex;width:70px;height:70px;margin:6px auto 0;border-radius:50%;align-items:center;justify-content:center;font-size:29px;line-height:1;background:var(--abg,#FFF4C7)}
 .tile .av.ph{background:transparent;border:2px dashed #cbd5e1;color:#94a3b8;font-size:22px}
-.tile .av svg,.avc svg,.agrid button svg{width:86%;height:86%}
-.aconf .big svg{width:90%;height:90%}
-.avc{display:inline-flex;width:34px;height:34px;border-radius:50%;align-items:center;justify-content:center;font-size:21px;vertical-align:middle;background:var(--abg,#FFF4C7)}
+.tile .av svg,.avc svg,.agrid button svg{width:96%;height:96%}
+.aconf .big svg{width:96%;height:96%}
+.avc{display:inline-flex;width:52px;height:52px;border-radius:50%;align-items:center;justify-content:center;font-size:21px;vertical-align:middle;background:var(--abg,#FFF4C7)}
 .tile .no{font-size:20px}
 .apick{background:#fff8e5;border-radius:14px;padding:10px;margin-top:10px}
-.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;margin-top:8px}
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px;margin-top:8px}
 .agrid button{font-size:30px;line-height:1;background:var(--abg,#fff);border:3px solid transparent;border-radius:50%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .agrid button.sel{border-color:var(--pri)}
 .apick{position:relative}
 .aconf{position:absolute;inset:0;background:rgba(255,255,255,.97);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;z-index:2;padding:12px}
-.aconf .big{font-size:76px;width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--abg,#FFF4C7)}
+.aconf .big{font-size:76px;width:176px;height:176px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--abg,#FFF4C7)}
 .aconf b{font-size:20px}.aconf small{color:#b45309;font-weight:700;font-size:15px}
 .aconf .acrow{display:flex;gap:12px}
 .aconf button{font-family:inherit;font-size:18px;font-weight:700;border-radius:14px;padding:12px 22px;border:0;cursor:pointer}
@@ -84,7 +84,9 @@ body.board .tiles{grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:
 body.board .tile{padding:14px 4px 10px}
 body.board .tile .no{font-size:40px}
 body.board .tile .nm{font-size:18px}
-body.board .tile .av{width:54px;height:54px;font-size:34px}
+body.board .tile .av{width:92px;height:92px;font-size:34px}
+body.board .avc{width:68px;height:68px}
+body.board .aconf .big{width:210px;height:210px}
 body.board .step{font-size:22px}
 body.board .phint{font-size:22px;padding:12px}
 body.board .egrid{grid-template-columns:repeat(4,1fr);gap:14px}
@@ -97,9 +99,9 @@ body.board .sendRow .card{flex:1;margin:0}
 body.board .sendRow textarea{font-size:20px;padding:10px}
 body.board .sendRow .go{flex:0 0 310px;font-size:28px;margin:0;border-radius:22px}
 body.board .hello{font-size:26px}
-body.board .apick{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(820px,92vw);max-height:84vh;overflow:auto;z-index:40;margin:0;box-shadow:0 0 0 100vmax rgba(0,0,0,.45),0 24px 70px rgba(0,0,0,.4);border:3px solid #fff}
+body.board .apick{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(940px,94vw);max-height:88vh;overflow:auto;z-index:40;margin:0;box-shadow:0 0 0 100vmax rgba(0,0,0,.45),0 24px 70px rgba(0,0,0,.4);border:3px solid #fff}
 body.board .apx{display:block;position:absolute;top:8px;right:12px;border:0;background:#fff;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer}
-body.board .agrid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:10px}
+body.board .agrid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px}
 body.board .apick .sub{padding-right:52px}   /* 讓說明文字不被右上角的關閉鈕壓到 */
 /* 臉的大小隨螢幕高度縮放，讓卡片、座號、送出鈕都能在同一個畫面內 */
 body.board .egrid .ecard svg{width:var(--fs,70px);height:var(--fs,70px)}
@@ -120,7 +122,10 @@ body.board .egrid.compact{--fs:clamp(40px,7.2vh,70px)}
   body.board .tile{padding:8px 2px 6px}
   body.board .tile .no{font-size:28px}
   body.board .tile .nm{font-size:14px}
-  body.board .tile .av{width:38px;height:38px;font-size:24px;margin-top:3px}
+  body.board .tile .av{width:64px;height:64px;font-size:24px;margin-top:3px}
+  body.board .avc{width:46px;height:46px}
+  body.board .agrid{grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:8px}
+  body.board .aconf .big{width:150px;height:150px}
   body.board .tile.done{padding-bottom:18px}
   body.board .egrid{gap:8px}
   body.board .egrid .ecard{padding:8px 4px;gap:3px;border-radius:16px}
@@ -381,14 +386,14 @@ async function loadClass(){
 function renderTiles(){
   if (!state.roster.length){ $('tiles').innerHTML='<div class="sub">這個班級還沒有名單，請老師先匯入。</div>'; return; }
   $('tiles').innerHTML = state.roster.map(r=>
-    `<button class="tile ${(state.done.ci||[]).includes(r.seat)||(state.done.co||[]).includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}"><span class="no">${r.seat}</span><span class="nm">號</span>${r.avatar?`<span class="av" style="--abg:${abg(r.seat)}">${SELAnimals.html(r.avatar,44)}</span>`:'<span class="av ph">＋</span>'}${(state.done.co||[]).includes(r.seat)?'<span class="dn">✓✓ 今日完成</span>':(state.done.ci||[]).includes(r.seat)?'<span class="dn">✓ 已Check-in</span>':''}</button>`).join('');
+    `<button class="tile ${(state.done.ci||[]).includes(r.seat)||(state.done.co||[]).includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}"><span class="no">${r.seat}</span><span class="nm">號</span>${r.avatar?`<span class="av" style="--abg:${abg(r.seat)}">${SELAnimals.html(r.avatar,66)}</span>`:'<span class="av ph">＋</span>'}${(state.done.co||[]).includes(r.seat)?'<span class="dn">✓✓ 今日完成</span>':(state.done.ci||[]).includes(r.seat)?'<span class="dn">✓ 已Check-in</span>':''}</button>`).join('');
   $('tiles').onclick = e => { const b=e.target.closest('.tile'); if(!b) return;
     state.seat=+b.dataset.s; state.kind=nextKind(); applyKind();
     showHello(); renderTiles(); if(!BOARD()) $('emotions').scrollIntoView({behavior:'smooth',block:'nearest'}); check(); };
 }
 function showHello(){
   const me = state.roster.find(r=>r.seat===state.seat)||{};
-  $('hello').innerHTML = `${me.avatar?`<span class="avc" style="--abg:${abg(me.seat)}">${SELAnimals.html(me.avatar,28)}</span> `:''}你選了 ${state.seat} 號 ` + ((!me.avatar&&BOARD())?`<button class="link" id="chAv">🎨 選動物（只能選一次）</button>`:'');
+  $('hello').innerHTML = `${me.avatar?`<span class="avc" style="--abg:${abg(me.seat)}">${SELAnimals.html(me.avatar,44)}</span> `:''}你選了 ${state.seat} 號 ` + ((!me.avatar&&BOARD())?`<button class="link" id="chAv">🎨 選動物（只能選一次）</button>`:'');
   const needPick = !me.avatar && !BOARD();   // 大螢幕不打斷流程，想選圖案再按按鈕
   $('apick').classList.toggle('hide', !needPick);
   if (needPick) renderAvatars();
@@ -401,12 +406,12 @@ function renderAvatars(){
   // 同班同學已選走的圖案：變灰、不能再選（每個圖案只能一人使用）
   const taken = new Set(state.roster.filter(r=>r.seat!==state.seat && r.avatar).map(r=>r.avatar));
   $('agrid').innerHTML = AVATARS.map((a,i)=> taken.has(a)
-    ? `<button disabled class="taken" title="${SELAnimals.NAME[a]}（已被同學選走）" style="--abg:${abg(i)}">${SELAnimals.svg(a,48)}</button>`
-    : `<button data-a="${a}" title="${SELAnimals.NAME[a]}" aria-label="${SELAnimals.NAME[a]}" style="--abg:${abg(i)}">${SELAnimals.svg(a,48)}</button>`).join('');
+    ? `<button disabled class="taken" title="${SELAnimals.NAME[a]}（已被同學選走）" style="--abg:${abg(i)}">${SELAnimals.svg(a,64)}</button>`
+    : `<button data-a="${a}" title="${SELAnimals.NAME[a]}" aria-label="${SELAnimals.NAME[a]}" style="--abg:${abg(i)}">${SELAnimals.svg(a,64)}</button>`).join('');
   // 點選後先確認，因為只能選一次、選了就固定
   $('agrid').onclick = e => { const b=e.target.closest('button'); if(!b||b.disabled) return;
     const av=b.dataset.a, seat=state.seat, i=AVATARS.indexOf(av);
-    $('aconf').innerHTML = `<div class="big" style="--abg:${abg(i)}">${SELAnimals.svg(av,100)}</div><b>確定選「${SELAnimals.NAME[av]}」嗎？</b><small>⚠️ 每個號碼只能選一次，選了就固定，不能再換囉！</small><div class="acrow"><button class="no2" id="acNo">再想想</button><button class="ok" id="acOk">確定 ✔</button></div>`;
+    $('aconf').innerHTML = `<div class="big" style="--abg:${abg(i)}">${SELAnimals.svg(av,168)}</div><b>確定選「${SELAnimals.NAME[av]}」嗎？</b><small>⚠️ 每個號碼只能選一次，選了就固定，不能再換囉！</small><div class="acrow"><button class="no2" id="acNo">再想想</button><button class="ok" id="acOk">確定 ✔</button></div>`;
     $('aconf').classList.remove('hide');
     $('acNo').onclick = () => $('aconf').classList.add('hide');
     $('acOk').onclick = async () => { $('acOk').disabled = true; $('err').textContent='';
