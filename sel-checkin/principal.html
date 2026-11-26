@@ -32,6 +32,8 @@ h2{font-size:17px;margin:16px 0 8px}
 .bar i{display:block}
 .i-red{background:var(--red)}.i-blue{background:var(--blue)}.i-yellow{background:var(--yellow)}.i-green{background:var(--green)}
 .mute{color:var(--mute);font-size:14px}
+.chg{font-size:12px;padding:2px 8px;border-radius:8px;color:#fff;font-weight:700}
+.chg.improved{background:var(--green)}.chg.worsened{background:var(--red)}.chg.shifted{background:#f59e0b}.chg.same{background:#94a3b8}
 .detail{background:#fff;border-radius:14px;padding:12px;margin-top:12px}
 table{width:100%;border-collapse:collapse;font-size:15px}
 th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
@@ -96,8 +98,10 @@ async function getOverview(date){
     const classes=[];
     for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k.startsWith('sel_roster_'))continue;
       const cls=k.slice(11), ro=store.get(k,[]);
-      classes.push({cls,students:ro.map(r=>{const c=ch.filter(x=>x.cls===cls&&x.seat===r.seat).pop(),f=fu.filter(x=>x.cls===cls&&x.seat===r.seat).pop();
-        return {seat:r.seat,name:r.name,...(c?{color:c.color,emotion:c.emotion,note:c.note,time:c.time}:{}),...(f?{fu:{status:f.status,note:f.note}}:{})}})});}
+      classes.push({cls,students:ro.map(r=>{const mine=ch.filter(x=>x.cls===cls&&x.seat===r.seat),f=fu.filter(x=>x.cls===cls&&x.seat===r.seat).pop();
+        const pick=p=>{const x=mine.filter(y=>y.period===p).pop();return x?{color:x.color,emotion:x.emotion,note:x.note,time:x.time}:null};
+        const am=pick('am'),pm=pick('pm'),L=pm||am;
+        return {seat:r.seat,name:r.name,avatar:r.avatar,...(am?{am}:{}),...(pm?{pm}:{}),...(L?{color:L.color,emotion:L.emotion,note:L.note}:{}),change:(am&&pm)?changeKind(am.color,pm.color):'',...(f?{fu:{status:f.status,note:f.note}}:{})}})});}
     return {ok:true,date,classes:classes.sort((a,b)=>a.cls.localeCompare(b.cls))};
   }
   const r=await fetch(GAS_URL+'?'+new URLSearchParams({action:'overview',date,pass:PASS}));return r.json();
@@ -140,6 +144,9 @@ async function load(){
   if(view==='stats'){loadStats();return}
   render();
 }
+const CHG_ZH={improved:'好轉',same:'持平',shifted:'轉換',worsened:'轉差'}, CHG_ICON={improved:'↑',same:'＝',shifted:'⇄',worsened:'↓'};
+const changeKind=(a,b)=>a===b?'same':b==='green'?'improved':a==='green'?'worsened':'shifted';
+const cell=x=>x?`<span class="dot ${x.color}"></span>${x.emotion?SELFaces.html(x.emotion,22):esc(COLOR[x.color])}`:'<span class="mute">—</span>';
 const need=s=>s.color&&!s.fu&&(s.color==='red'||(s.color==='blue'&&s.note));
 function render(){
   const cnt={red:0,blue:0,yellow:0,green:0,none:0};let total=0;
@@ -152,16 +159,17 @@ function render(){
     c.students.forEach(s=>{if(s.color){k[s.color]++;done++}});
     return `<div class="cc ${openCls===c.cls?'open':''}" data-c="${c.cls}"><h3><span>${clsLabel(c.cls)}</span><span class="mute">${done}/${n} 已簽到</span></h3>
       <div class="bar">${['red','blue','yellow','green'].map(x=>k[x]?`<i class="i-${x}" style="width:${k[x]/n*100}%"></i>`:'').join('')}</div>
-      <div class="mute">🔴${k.red} 🔵${k.blue} 🟡${k.yellow} 🟢${k.green}</div></div>`}).join('')||'<div class="mute">尚無名單，請先匯入 Roster。</div>';
+      <div class="mute">🔴${k.red} 🔵${k.blue} 🟡${k.yellow} 🟢${k.green}</div>
+      <div class="mute">☀️${c.students.filter(s=>s.am).length} 🌇${c.students.filter(s=>s.pm).length}　好轉↑${c.students.filter(s=>s.change==='improved').length} 轉差↓${c.students.filter(s=>s.change==='worsened').length}</div></div>`}).join('')||'<div class="mute">尚無名單，請先匯入 Roster。</div>';
   $('classes').onclick=e=>{const c=e.target.closest('.cc');if(c){openCls=openCls===c.dataset.c?'':c.dataset.c;render()}};
   const oc=data.classes.find(c=>c.cls===openCls);
-  $('detail').innerHTML=oc?`<div class="detail"><b>${clsLabel(oc.cls)}（${esc($('date').value)}）</b><table><tr><th>座號</th><th>姓名</th><th>情緒</th><th>留言</th><th>處遇</th></tr>`+
-    oc.students.map(s=>`<tr><td>${esc(s.avatar||'')} ${s.seat}</td><td>${esc(s.name)}</td><td>${s.color?`<span class="dot ${s.color}"></span>${s.emotion?SELFaces.html(s.emotion,22):esc(COLOR[s.color])}`:'<span class="mute">未簽到</span>'}</td><td>${esc(s.note||'')}</td><td>${s.fu?esc(s.fu.status)+(s.fu.note?'：'+esc(s.fu.note):''):''}</td></tr>`).join('')+'</table></div>':'';
+  $('detail').innerHTML=oc?`<div class="detail"><b>${clsLabel(oc.cls)}（${esc($('date').value)}）</b><table><tr><th>座號</th><th>姓名</th><th>☀️ 早上</th><th>🌇 放學</th><th>變化</th><th>留言</th><th>處遇</th></tr>`+
+    oc.students.map(s=>`<tr><td>${esc(s.avatar||'')} ${s.seat}</td><td>${esc(s.name)}</td><td>${cell(s.am)}</td><td>${cell(s.pm)}</td><td>${s.change?`<span class="chg ${s.change}">${CHG_ZH[s.change]}${CHG_ICON[s.change]}</span>`:''}</td><td>${esc(s.note||'')}</td><td>${s.fu?esc(s.fu.status)+(s.fu.note?'：'+esc(s.fu.note):''):''}</td></tr>`).join('')+'</table></div>':'';
   $('meta').textContent=`${$('date').value} · 更新 ${new Date().toTimeString().slice(0,5)} · 每分鐘自動更新`;
 }
 function exportCsv(){
-  const rows=[['班級','日期','座號','姓名','顏色','情緒','備註','處遇狀態']];
-  data.classes.forEach(c=>c.students.forEach(s=>rows.push([clsLabel(c.cls),data.date,s.seat,s.name,s.color?COLOR[s.color]:'未簽到',s.emotion||'',s.note||'',s.fu?s.fu.status:''])));
+  const rows=[['班級','日期','座號','姓名','早上顏色','早上情緒','放學顏色','放學情緒','當天變化','備註（最新）','處遇狀態']];
+  data.classes.forEach(c=>c.students.forEach(s=>rows.push([clsLabel(c.cls),data.date,s.seat,s.name,s.am?COLOR[s.am.color]:'未簽到',s.am?s.am.emotion||'':'',s.pm?COLOR[s.pm.color]:'未簽到',s.pm?s.pm.emotion||'':'',s.change?CHG_ZH[s.change]:'',s.note||'',s.fu?s.fu.status:''])));
   const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`SEL_全校_${data.date}.csv`;a.click();
 }

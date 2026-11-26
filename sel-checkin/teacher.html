@@ -27,6 +27,14 @@ header button{background:#fff;color:var(--pri);font-weight:700;cursor:pointer}
 .s .top{display:flex;justify-content:space-between;font-weight:700}
 .s .g{font-size:14px;margin-top:4px}.s .n{font-size:13px;color:var(--mute);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .s .st{font-size:12px;margin-top:4px;color:#047857}
+.pm2{display:flex;align-items:center;gap:3px;margin-top:6px;font-size:12px;flex-wrap:wrap}
+.pm2 .arr{color:#94a3b8}
+.chg{font-size:11px;padding:1px 7px;border-radius:8px;color:#fff;font-weight:700;margin-left:2px}
+.chg.improved{background:var(--green)}.chg.worsened{background:var(--red)}.chg.shifted{background:#f59e0b}.chg.same{background:#94a3b8}
+.cbox{background:#fff;border-radius:14px;padding:10px 14px;margin-bottom:12px;box-shadow:0 1px 5px rgba(0,0,0,.07)}
+.cbox h4{margin:0 0 6px;font-size:15px}
+.cbox .row{display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid #f1f5f9;font-size:14px;flex-wrap:wrap}
+.cbox .sum{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
 .s.urgent{outline:3px solid var(--red)}
 .badge{position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border-radius:10px;font-size:12px;padding:1px 7px;font-weight:700}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:12px;z-index:10}
@@ -69,6 +77,7 @@ textarea.roster{height:240px}
     <div id="statsView" class="hide"></div>
     <div id="todayView">
     <div id="alerts"></div>
+    <div id="changeBox"></div>
     <div class="stats" id="stats"></div>
     <div class="mute" id="meta" style="margin-bottom:8px"></div>
     <div class="grid" id="grid"></div>
@@ -177,15 +186,25 @@ async function load(){
 }
 
 /* 每位學生取當日最新一筆；整合名單，未簽到者列出 */
+const PER={am:'☀️ 早上',pm:'🌇 放學'};
+const CHG_ZH={improved:'好轉',same:'持平',shifted:'轉換',worsened:'轉差'};
+const CHG_ICON={improved:'↑',same:'＝',shifted:'⇄',worsened:'↓'};
+const changeKind=(a,b)=>a===b?'same':b==='green'?'improved':a==='green'?'worsened':'shifted';
+const dotHtml=c=>`<span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:${({red:'#e5484d',blue:'#3b82f6',yellow:'#f5b301',green:'#2fa86b'})[c]||'#cbd5e1'}"></span>`;
+const mini=(rec,size)=>rec?(SELFaces.svg(rec.emotion||'',size||26)||dotHtml(rec.color)):'<span class="mute">—</span>';
 function latest(){
-  const m={};
-  data.checkins.forEach(c=>{ if(!m[c.seat]||String(c.time)>=String(m[c.seat].time)) m[c.seat]=c });
+  const m={},byP={};
+  data.checkins.forEach(c=>{
+    if(!m[c.seat]||String(c.time)>=String(m[c.seat].time)) m[c.seat]=c;                 // 目前（最新）狀態
+    const p=c.period||'am', k=c.seat+'|'+p;
+    if(!byP[k]||String(c.time)>=String(byP[k].time)) byP[k]=c;                         // 早上／放學各自最新一筆
+  });
   const seats=new Set([...data.roster.map(r=>r.seat),...Object.keys(m).map(Number)]);
   const fu={}; data.followups.forEach(f=>{fu[f.seat]=f});
   return [...seats].sort((a,b)=>a-b).map(seat=>{
-    const r=data.roster.find(x=>x.seat===seat), c=m[seat];
+    const r=data.roster.find(x=>x.seat===seat), c=m[seat], am=byP[seat+'|am'], pm=byP[seat+'|pm'];
     const pr=c?COLOR[c.color].p:-1;
-    return {seat,name:(r&&r.name)||(c&&c.name)||'',avatar:(r&&r.avatar)||'',c,pr,fu:fu[seat]};
+    return {seat,name:(r&&r.name)||(c&&c.name)||'',avatar:(r&&r.avatar)||'',c,am,pm,change:(am&&pm)?changeKind(am.color,pm.color):'',pr,fu:fu[seat]};
   });
 }
 function render(){
@@ -197,6 +216,14 @@ function render(){
   $('stats').onclick=e=>{const c=e.target.closest('.chip');if(c){filter=c.dataset.f;render()}};
   const urgent=L.filter(s=>s.c&&(s.c.color==='red'||(s.c.color==='blue'&&s.c.note))&&!s.fu);
   $('alerts').innerHTML=urgent.length?`<div class="alert">🚨 <b>優先關心（尚未處遇）：</b>${urgent.map(s=>esc(s.seat+'號'+s.name)).join('、')}</div>`:'';
+  // 今日心情變化（早上 → 放學）
+  const both=L.filter(s=>s.change), kc={improved:0,same:0,shifted:0,worsened:0}; both.forEach(s=>kc[s.change]++);
+  const amN=L.filter(s=>s.am).length, pmN=L.filter(s=>s.pm).length;
+  const moved=both.filter(s=>s.change!=='same').sort((a,b)=>({worsened:0,shifted:1,improved:2})[a.change]-({worsened:0,shifted:1,improved:2})[b.change]);
+  $('changeBox').innerHTML=`<div class="cbox"><h4>🔄 今日心情變化（早上 → 放學）<span class="mute"> 早上 ${amN} 人・放學 ${pmN} 人簽到</span></h4>`+
+    (both.length?`<div class="sum">${['improved','same','shifted','worsened'].map(k=>`<span class="chg ${k}" style="font-size:13px;padding:3px 10px">${CHG_ZH[k]} ${kc[k]}</span>`).join('')}</div>`+
+      moved.map(s=>`<div class="row"><b>${esc(s.avatar)} ${s.seat}號 ${esc(s.name)}</b> ☀️${mini(s.am,24)} → 🌇${mini(s.pm,24)} <span class="chg ${s.change}">${CHG_ZH[s.change]}${CHG_ICON[s.change]}</span></div>`).join('')
+      :'<div class="mute">還沒有同學「早上、放學」都簽到，放學後這裡會顯示心情變化。</div>')+'</div>';
   $('meta').textContent=`${clsLabel(cls)} · ${$('date').value} · 已簽到 ${L.length-cnt.none}/${L.length} · 更新 ${new Date().toTimeString().slice(0,5)}`;
   const shown=L.filter(s=>filter==='all'||(filter==='none'?!s.c:s.c&&s.c.color===filter))
     .sort((a,b)=>filter==='all'?(b.pr-a.pr||a.seat-b.seat):a.seat-b.seat);
@@ -205,7 +232,7 @@ function render(){
     return `<div class="s ${col} ${s.c&&s.c.color==='red'&&!s.fu?'urgent':''}" data-seat="${s.seat}">
       ${s.c&&s.c.note?'<span class="badge">💬</span>':''}
       <div class="top"><span>${esc(s.avatar)} ${s.seat}號</span><span>${esc(s.name)}</span></div>
-      <div class="g">${s.c?COLOR[col].zh+'<br>'+SELFaces.html(s.c.emotion||'',22):'<span class="mute">尚未簽到</span>'}</div>
+      ${s.c?`<div class="g">${COLOR[col].zh}</div><div class="pm2"><span title="早上">☀️</span>${mini(s.am)}<span class="arr">→</span><span title="放學">🌇</span>${mini(s.pm)}${s.change?`<span class="chg ${s.change}">${CHG_ZH[s.change]}${CHG_ICON[s.change]}</span>`:''}</div>`:'<div class="g"><span class="mute">尚未簽到</span></div>'}
       ${s.c&&s.c.note?`<div class="n">${esc(s.c.note)}</div>`:''}
       ${s.fu?`<div class="st">✓ ${esc(s.fu.status)}</div>`:''}</div>`}).join('')||'<div class="mute">沒有符合的學生</div>';
   $('grid').onclick=e=>{const c=e.target.closest('.s');if(c)openStudent(+c.dataset.seat)};
@@ -221,8 +248,8 @@ async function openStudent(seat){
   const days=[...Array(14)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')});
   const notes=(h.history||[]).filter(x=>x.note).slice(-5).reverse();
   showModal(`<h3>${seat}號 ${esc(s.name)}</h3>
-    <div>今日：${s.c?`<b>${COLOR[s.c.color].zh}</b> ${SELFaces.html(s.c.emotion||'',22)}`:'<span class="mute">尚未簽到</span>'}</div>
-    ${s.c&&s.c.note?`<div style="background:#f3f4f6;padding:8px;border-radius:8px;margin-top:6px">💬 ${esc(s.c.note)}</div>`:''}
+    ${['am','pm'].map(p=>{const x=s[p];return `<div style="margin-top:6px">${PER[p]}：${x?`<b>${COLOR[x.color].zh}</b> ${SELFaces.html(x.emotion||'',22)}`:'<span class="mute">尚未簽到</span>'}</div>${x&&x.note?`<div style="background:#f3f4f6;padding:8px;border-radius:8px;margin-top:4px">💬 ${esc(x.note)}</div>`:''}`}).join('')}
+    ${s.change?`<div style="margin-top:8px">今日變化：<span class="chg ${s.change}" style="font-size:13px;padding:3px 10px">${CHG_ZH[s.change]}${CHG_ICON[s.change]}</span></div>`:''}
     <p class="mute" style="margin:12px 0 0">近 14 天（舊→新，滑過可看日期）</p>
     <div class="hist">${days.map(d=>`<div class="dot ${byDay[d]?byDay[d].color:''}" title="${d}">${d.slice(8)}</div>`).join('')}</div>
     ${notes.length?'<div class="mute">近期留言</div>'+notes.map(n=>`<div class="log">${esc(n.date)}：${esc(n.note)}</div>`).join(''):''}
@@ -257,8 +284,8 @@ function rosterEditor(){
   };
 }
 function exportCsv(){
-  const rows=[['班級','日期','座號','姓名','顏色','情緒','備註','處遇狀態']];
-  latest().forEach(s=>rows.push([cls,$('date').value,s.seat,s.name,s.c?COLOR[s.c.color].zh:'未簽到',s.c?(s.c.emotion||''):'',s.c?s.c.note:'',s.fu?s.fu.status:'']));
+  const rows=[['班級','日期','座號','姓名','早上顏色','早上情緒','放學顏色','放學情緒','當天變化','備註（最新）','處遇狀態']];
+  latest().forEach(s=>rows.push([cls,$('date').value,s.seat,s.name,s.am?COLOR[s.am.color].zh:'未簽到',s.am?(s.am.emotion||''):'',s.pm?COLOR[s.pm.color].zh:'未簽到',s.pm?(s.pm.emotion||''):'',s.change?CHG_ZH[s.change]:'',s.c?s.c.note:'',s.fu?s.fu.status:'']));
   const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`SEL_${cls}_${$('date').value}.csv`;a.click();
 }

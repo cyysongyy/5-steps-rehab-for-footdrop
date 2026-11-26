@@ -25,7 +25,7 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 .tile .no{display:block;font-size:28px;font-weight:800;color:var(--pri);line-height:1.1}
 .tile .nm{display:block;font-size:16px;margin-top:2px}
 .tile.sel{border-color:var(--pri);background:#eef2ff;transform:scale(1.04)}
-.tile.done::after{content:"✓ 今天已簽到";position:absolute;left:0;right:0;bottom:-1px;font-size:11px;color:#047857;background:#d1fae5;border-radius:0 0 12px 12px}
+.tile .dn{position:absolute;left:0;right:0;bottom:-1px;font-size:11px;color:#047857;background:#d1fae5;border-radius:0 0 12px 12px;padding:1px 0}
 .tile.done{padding-bottom:20px}
 .tile .av{display:flex;width:48px;height:48px;margin:6px auto 0;border-radius:50%;align-items:center;justify-content:center;font-size:29px;line-height:1;background:var(--abg,#FFF4C7)}
 .tile .av.ph{background:transparent;border:2px dashed #cbd5e1;color:#94a3b8;font-size:22px}
@@ -59,6 +59,9 @@ select,textarea{width:100%;font-size:18px;padding:12px;border:2px solid var(--li
 textarea{resize:vertical}
 .go{width:100%;background:var(--pri);color:#fff;border:0;border-radius:16px;padding:16px;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit}
 .go:disabled{background:#c7c9d6}
+.ptabs{display:flex;gap:8px;margin-bottom:12px}
+.ptabs button{flex:1;padding:12px 6px;border-radius:16px;border:3px solid transparent;background:rgba(255,255,255,.7);font-size:17px;font-weight:700;color:var(--mute);font-family:inherit;cursor:pointer}
+.ptabs button.on{border-color:var(--pri);color:var(--pri);background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.1)}
 .done-view{text-align:center}
 .big{font-size:64px}
 .tips{text-align:left;margin:10px 0 0;padding-left:20px;line-height:1.7}
@@ -87,6 +90,7 @@ textarea{resize:vertical}
   </div>
 
   <div id="formView">
+    <div class="ptabs" id="ptabs"><button data-p="am">☀️ 早上心情</button><button data-p="pm">🌇 放學心情</button></div>
     <div class="card">
       <p class="step"><span>1</span><i id="stp1" style="font-style:normal">找到我的座號，點一下（只顯示座號，保護隱私）</i></p>
       <div class="row" id="classRow">
@@ -169,10 +173,20 @@ const GRADE_STYLE = {
   5:{page:'#F3EEFF',pri:'#7048C9',title:'✨ 心情 Check-in', s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'},
   6:{page:'#EDF1F6',pri:'#334155',title:'🧭 心情 Check-in', s1:'選擇我的座號',           s2:'此刻的心情',               s3:'補充說明（選填）',           layout:'compact'}
 };
+/* 早上心情／放學心情：中午 12 點前預設早上，之後預設放學；學生也可以自己切換 */
+const PERIOD = { am:{icon:'☀️',label:'早上心情',after:'放學前，再來告訴老師你的心情哦！'}, pm:{icon:'🌇',label:'放學心情',after:'謝謝你，明天見！'} };
+const defaultPeriod = () => new Date().getHours() < 12 ? 'am' : 'pm';
+function applyPeriod(){
+  const P = PERIOD[state.period], st = GRADE_STYLE[state.grade] || GRADE_STYLE[3];
+  document.querySelectorAll('#ptabs button').forEach(b=>b.classList.toggle('on', b.dataset.p===state.period));
+  $('stp2').textContent = `${P.icon} ${P.label}：${st.s2}`;
+  $('send').textContent = `送出${P.label} ✔`;
+}
 function applyStyle(g){
   const st = GRADE_STYLE[g] || GRADE_STYLE[3], root = document.documentElement.style;
   root.setProperty('--page', st.page); root.setProperty('--pri', st.pri);
-  $('ttl').textContent = st.title; $('stp1').textContent = st.s1; $('stp2').textContent = st.s2; $('stp3').textContent = st.s3;
+  $('ttl').textContent = st.title; $('stp1').textContent = st.s1; $('stp3').textContent = st.s3;
+  applyPeriod();
 }
 const tierOf = g => g<=2 ? 1 : g<=4 ? 2 : 3;
 
@@ -203,7 +217,8 @@ const store = { get(k,d){ try{ return JSON.parse(localStorage.getItem(k))??d }ca
 async function api(action, data){
   if (DEMO) {                       // 展示模式：存在本機
     if (action==='roster'){
-      const done = store.get('sel_demo_checkins',[]).filter(c=>c.cls===data.cls&&c.date===todayStr()).map(c=>c.seat);
+      const today = store.get('sel_demo_checkins',[]).filter(c=>c.cls===data.cls&&c.date===todayStr());
+      const done = {am:today.filter(c=>c.period==='am').map(c=>c.seat), pm:today.filter(c=>c.period==='pm').map(c=>c.seat)};
       return {ok:true, roster: store.get('sel_roster_'+data.cls, []).map(r=>({seat:r.seat,avatar:r.avatar||''})), done};
     }
     if (action==='setAvatar'){ const k='sel_roster_'+data.cls, a=store.get(k,[]); if(a.some(x=>x.seat!==data.seat&&x.avatar===data.avatar)) return {ok:false,error:'taken'}; const r=a.find(x=>x.seat===data.seat); if(r) r.avatar=data.avatar; store.set(k,a); return {ok:true}; }
@@ -217,7 +232,8 @@ async function api(action, data){
   return r.json();
 }
 
-let state = {cls:'', grade:0, seat:null, emo:null, roster:[], done:[]};
+let state = {cls:'', grade:0, seat:null, emo:null, roster:[], done:{am:[],pm:[]}, period:defaultPeriod()};
+const doneOf = d => Array.isArray(d) ? {am:d,pm:[]} : (d||{am:[],pm:[]});   // 相容舊版後端
 
 function isSchoolDay(){
   const d=new Date();
@@ -240,6 +256,9 @@ function init(){
   if (m){ $('grade').value=m[1]; if (CLASS_NAMES.includes(m[2])) $('klass').value=m[2]; }
   if (qc && m) $('classRow').classList.add('hide');
   $('grade').onchange = $('klass').onchange = loadClass;
+  $('ptabs').onclick = e => { const b=e.target.closest('button'); if(!b||b.dataset.p===state.period) return;
+    state.period=b.dataset.p; state.emo=null; document.querySelectorAll('.ecard').forEach(x=>x.classList.remove('sel','dim'));
+    applyPeriod(); renderTiles(); check(); };
   $('send').onclick = submit;
   $('again').onclick = backToList;
   loadClass();
@@ -248,18 +267,18 @@ function init(){
 async function loadClass(){
   const g=$('grade').value, k=$('klass').value;
   state.grade = +g||0; state.cls = (g&&k) ? g+k : '';
-  state.roster=[]; state.done=[]; state.seat=null; state.emo=null; $('hello').textContent='';
+  state.roster=[]; state.done={am:[],pm:[]}; state.seat=null; state.emo=null; $('hello').textContent='';
   applyStyle(state.grade); renderEmotions();
   if (!state.cls){ $('tiles').innerHTML='<div class="sub">請先選年級</div>'; check(); return; }
   store.set('sel_class',state.cls);
   $('tiles').innerHTML='<div class="sub">載入中…</div>';
-  try{ const r = await api('roster',{cls:state.cls}); state.roster=(r.roster||[]).sort((a,b)=>a.seat-b.seat); state.done=r.done||[]; }catch(e){}
+  try{ const r = await api('roster',{cls:state.cls}); state.roster=(r.roster||[]).sort((a,b)=>a.seat-b.seat); state.done=doneOf(r.done); }catch(e){}
   renderTiles(); check();
 }
 function renderTiles(){
   if (!state.roster.length){ $('tiles').innerHTML='<div class="sub">這個班級還沒有名單，請老師先匯入。</div>'; return; }
   $('tiles').innerHTML = state.roster.map(r=>
-    `<button class="tile ${state.done.includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}"><span class="no">${r.seat}</span><span class="nm">號</span>${r.avatar?`<span class="av" style="--abg:${abg(r.seat)}">${esc(r.avatar)}</span>`:'<span class="av ph">＋</span>'}</button>`).join('');
+    `<button class="tile ${(state.done[state.period]||[]).includes(r.seat)?'done':''} ${state.seat===r.seat?'sel':''}" data-s="${r.seat}"><span class="no">${r.seat}</span><span class="nm">號</span>${r.avatar?`<span class="av" style="--abg:${abg(r.seat)}">${esc(r.avatar)}</span>`:'<span class="av ph">＋</span>'}${(state.done[state.period]||[]).includes(r.seat)?`<span class="dn">✓ ${PERIOD[state.period].label.slice(0,2)}已簽到</span>`:''}</button>`).join('');
   $('tiles').onclick = e => { const b=e.target.closest('.tile'); if(!b) return;
     state.seat=+b.dataset.s;
     showHello(); renderTiles(); $('emotions').scrollIntoView({behavior:'smooth',block:'nearest'}); check(); };
@@ -284,7 +303,7 @@ function renderAvatars(){
     try{ const r = await api('setAvatar',{cls:state.cls, seat, avatar:av});
       if (r.error==='taken'){   // 剛好被同學搶先選走：更新名單，請他換一個
         $('err').textContent='這個圖案剛剛被同學選走了，請換一個。';
-        const fresh = await api('roster',{cls:state.cls}); state.roster=(fresh.roster||[]).sort((a,b)=>a.seat-b.seat); state.done=fresh.done||[];
+        const fresh = await api('roster',{cls:state.cls}); state.roster=(fresh.roster||[]).sort((a,b)=>a.seat-b.seat); state.done=doneOf(fresh.done);
         renderTiles(); renderAvatars(); return; }
       if(!r.ok) throw 0;
       me.avatar=av; $('apick').classList.add('hide'); showHello(); renderTiles();
@@ -311,12 +330,12 @@ async function submit(){
   $('send').disabled = true; $('err').textContent='';
   try{
     const e = state.emo;
-    const r = await api('checkin',{cls:state.cls, seat:state.seat, color:e.color, emotion:e.em+' '+e.name, note:$('note').value.trim()});
+    const r = await api('checkin',{cls:state.cls, seat:state.seat, period:state.period, color:e.color, emotion:e.em+' '+e.name, note:$('note').value.trim()});
     if (!r.ok) throw new Error(r.error||'fail');
     $('note').value='';
     const c = COLORS[e.color];
-    $('dEmoji').innerHTML=SELFaces.svg(e.name,110); $('dTitle').textContent=`你選了「${e.name}」（${c.zh}・${c.feel}區）`; $('dMsg').textContent=c.msg;
-    $('dTips').innerHTML = c.tips.map(t=>`<li>${t}</li>`).join('');
+    $('dEmoji').innerHTML=SELFaces.svg(e.name,110); $('dTitle').textContent=`${PERIOD[state.period].icon} ${PERIOD[state.period].label}：「${e.name}」（${c.zh}・${c.feel}區）`; $('dMsg').textContent=c.msg;
+    $('dTips').innerHTML = c.tips.map(t=>`<li>${t}</li>`).join('') + `<li style="list-style:none;margin-top:6px;color:var(--pri);font-weight:700">${PERIOD[state.period].after}</li>`;
     $('dSig').innerHTML = SIGNALS.map((g,i)=>`<div class="sc"><img src="${g.img}" alt="${g.name}" loading="lazy"><b>${i+1}. ${g.name}</b>${g.use}</div>`).join('');
     $('formView').classList.add('hide'); $('doneView').classList.remove('hide'); window.scrollTo(0,0);
   }catch(e){ $('err').textContent='送出失敗，請檢查網路後再試一次。'; check(); }
